@@ -51,7 +51,7 @@ function setup() {
   falcon.missionAnimTimer = new Time(falcon.deltaT)
 
   falcon.copy(falconcopy)
-  missionSequence = new Mission(["Propagate, to FREL = 20", "Propagate, to apoapsis", "Target POSM = 400, at FREL = 100"], falcon)
+  missionSequence = new Mission(["Propagate, to periapsis", "Target ECCE = 1.4, at FREL = 10", "Target ECCE = 0.4, at FREL = 100", "Propagate, to apoapsis", "Target RMAG = 200, at periapsis"], falcon)
   time = new Time(deltaT)
   resizeImages()
 }
@@ -69,13 +69,13 @@ function draw() {
 
   //UPDATE AND SHOW THE SAT
   falcon.showSat()
-  falcon.checkSOI()
+  falcon.checkSOI(1)
 
   if(falcon.stillInOnePiece == 1 && time.currentFrame < transferFrame) {
-    falcon.stillInOnePiece = falcon.orbitUpdate(time.halt, 1, moon)
+    falcon.stillInOnePiece = falcon.orbitUpdate(time.halt, 1, moon, 1)
   }
 
-  if(frameCount == 2) {
+  if(frameCount == 1) {
     falcon.correctThetaFindRs()
   }
 
@@ -92,7 +92,7 @@ function draw() {
         console.log("Our results are: ", results)
         falcon.executeManeuver(missionSequence.burnMagnitude)
 
-        falcon.stillInOnePiece = falcon.orbitUpdate(time.halt, 1, moon)
+        falcon.stillInOnePiece = falcon.orbitUpdate(time.halt, 1, moon, 1)
         falcon.correctThetaFindRs()
         falcon.calculateElements(moon)
         falcon.displayElements()
@@ -103,7 +103,7 @@ function draw() {
       //IF WE"RE IN THE MIDDLE OF A SEGMENT
       else if(falcon.missionAnimTimer.timeSinceCreation < missionSequence.framesToWait && falcon.stillInOnePiece == 1) {
         // console.log('executing', falcon.pos)
-        falcon.stillInOnePiece = falcon.orbitUpdate(time.halt, 1, moon)
+        falcon.stillInOnePiece = falcon.orbitUpdate(time.halt, 1, moon, 1)
         falcon.correctThetaFindRs()
         falcon.calculateElements(moon)
         falcon.displayElements()
@@ -119,7 +119,7 @@ function draw() {
     }
     else if(falcon.stillInOnePiece) {
       falcon.transferComplete = 1
-      falcon.stillInOnePiece = falcon.orbitUpdate(time.halt, 1, moon)
+      falcon.stillInOnePiece = falcon.orbitUpdate(time.halt, 1, moon, 1)
       falcon.correctThetaFindRs()
       falcon.calculateElements(moon)
       falcon.displayElements()
@@ -127,11 +127,9 @@ function draw() {
 
       if(keyIsDown(190)) {
         falcon.executeManeuver(0.016)
-        falcon.correctThetaFindRs(0)
       }
       if(keyIsDown(188)) {
         falcon.executeManeuver(-0.016)
-        falcon.correctThetaFindRs(0)
       }
 
       if(keyIsDown(ESCAPE)) {

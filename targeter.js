@@ -30,10 +30,10 @@ class Targeter {
     this.vary()
   }
 
-  propagateStep(i, stopConditionValue, propFidelity) {
-    this.targetMoon.propagate()
-    this.targetObject.propagateSOI(this.targetMoon)
-    this.propSuccess = parseInt(this.targetObject.orbitUpdate(0, propFidelity, this.targetMoon))
+  propagateStep(i, stopConditionValue, propFidelity, propDirection, initialSOI) {
+    this.targetMoon.propagate(propDirection)
+    this.targetObject.propagateSOI(this.targetMoon, stopConditionValue, initialSOI)
+    this.propSuccess = parseInt(this.targetObject.orbitUpdate(0, propFidelity, this.targetMoon, propDirection))
 
     //FINDING E AND THINGS
     if(i == 1 && stopConditionValue != "CORRECTING_DO_NOT_SUBCALL") {
@@ -45,7 +45,7 @@ class Targeter {
     this.propTrail.push([this.targetObject.pos.x, this.targetObject.pos.y])
   }
 
-  propagate(propFidelity, stopCondition, stopConditionValue) {
+  propagate(propFidelity, stopCondition, stopConditionValue, propDirection, initialSOI) {
     this.convergenceStatus = "nominal"
     this.propTrail = []
     this.propSuccess = 1
@@ -57,7 +57,7 @@ class Targeter {
       case "framesElapsed":
         for(var j = 0; j < stopConditionValue; j++) {
           if(this.propSuccess == 1) {
-            this.propagateStep(j, stopConditionValue, propFidelity)
+            this.propagateStep(j, stopConditionValue, propFidelity, propDirection, initialSOI)
           }
         }
         break
@@ -66,7 +66,7 @@ class Targeter {
         for(var j = 0; j < stopConditionValue; j++) {
           time.halt = 0
           if(this.propSuccess == 1) {
-            this.propagateStep(j, stopConditionValue, propFidelity)
+            this.propagateStep(j, stopConditionValue, propFidelity, propDirection)
           }
         }
         break
@@ -78,11 +78,11 @@ class Targeter {
         var previousR = parseFloat(this.targetObject.distToEarth - 1)
 
         while((!(Math.sign(previousR - this.targetObject.distToEarth) == Math.sign(previousR - secondPreviousR)) || (previousR < this.targetObject.distToEarth)) && this.propSuccess == 1 && ((i < 2000) || i < 3)) {
-          this.targetMoon.propagate()
+          this.targetMoon.propagate(propDirection)
           secondPreviousR = previousR
           previousR = parseFloat(this.targetObject.distToEarth)
-          this.targetObject.propagateSOI(this.targetMoon)
-          this.propSuccess = parseInt(this.targetObject.orbitUpdate(0, propFidelity, this.targetMoon))
+          this.targetObject.propagateSOI(this.targetMoon, stopConditionValue, initialSOI)
+          this.propSuccess = parseInt(this.targetObject.orbitUpdate(0, propFidelity, this.targetMoon, propDirection))
 
           //FINDING E AND THINGS
           if(i == 1 && stopConditionValue != "CORRECTING_DO_NOT_SUBCALL") {
@@ -98,6 +98,9 @@ class Targeter {
           }
         }
         //CHANGED
+        if(i == 2000) {
+          this.propSuccess = 0
+        }
         this.targetObject.previousObjectState.copy(this.targetObject)
         break
 
@@ -108,11 +111,11 @@ class Targeter {
           var previousR = parseFloat(this.targetObject.distToEarth - 1)
 
           while((!(Math.sign(previousR - this.targetObject.distToEarth) == Math.sign(previousR - secondPreviousR)) || (previousR > this.targetObject.distToEarth)) && this.propSuccess == 1 && ((i < 2000) || i < 10)) {
-            this.targetMoon.propagate()
+            this.targetMoon.propagate(propDirection)
             secondPreviousR = previousR
             previousR = parseFloat(this.targetObject.distToEarth)
-            this.targetObject.propagateSOI(this.targetMoon)
-            this.propSuccess = parseInt(this.targetObject.orbitUpdate(0, propFidelity, this.targetMoon))
+            this.targetObject.propagateSOI(this.targetMoon, stopConditionValue, initialSOI)
+            this.propSuccess = parseInt(this.targetObject.orbitUpdate(0, propFidelity, this.targetMoon, propDirection))
 
             //FINDING E AND THINGS
             if(i == 1 && stopConditionValue != "CORRECTING_DO_NOT_SUBCALL") {

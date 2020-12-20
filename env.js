@@ -17,18 +17,13 @@ class Moon {
     }
   }
 
-  propagate() {
-    this.theta += this.thetaDot
-    this.pos = createVector(this.r * cos(this.theta) + earth.pos.x, this.r * sin(this.theta) + earth.pos.y)
-    this.vel = createVector(this.thetaDot * cos(this.theta), this.thetaDot * sin(this.theta))
+  propagate(propDirection) {
+      this.theta += this.thetaDot * propDirection //here's where we'd change the prop direction
+      this.pos = createVector(this.r * cos(this.theta) + earth.pos.x, this.r * sin(this.theta) + earth.pos.y)
+      this.vel = createVector(this.thetaDot * cos(this.theta), this.thetaDot * sin(this.theta))
   }
 
   show() {
-    // push()
-    // noStroke()
-    // fill(172, 82, 137)
-    // ellipse(this.pos.x, this.pos.y, this.mass, this.mass)
-    // pop()
   }
 
   drawSOI() {
