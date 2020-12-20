@@ -10,35 +10,31 @@ class Mission {
     }
   }
 
-  executeSequence() {
+  executeSequence(i) {
     this.propagator = new Targeter(this.targetObject, "noChange", null, 1, "apoapsis", null, "burnV", 0.00, 100, 0.01)
-    for(var i = 0; i < this.sequence.length; i++) {
-      this.parseUserMissionPhase(this.sequence[i])
+    this.propagator.segmentTimer = new Time(this.targetObject.deltaT)
 
-      if(this.sequence[i].includes('Target')) {
-        this.propagator.vary()
-      }
-      else {
-        this.propagator.propagate(this.propagator.propFidelity, this.propagator.propStopCondition, this.propagator.propStopValue)
-      }
-      this.propagator.drawConvergence()
-      console.log(this.targetObject)
-      if(false) {
-        this.propagator.targetObject.previousObjectState.copy(this.propagator.originalObject)
-      }
-      else {
-        this.propagator.targetObject.copy(this.propagator.originalObject)
-      }
+    this.parseUserMissionPhase(this.sequence[i])
+
+    if(this.sequence[i].includes('Target')) {
+      this.propagator.vary()
     }
+    else {
+      this.propagator.propagate(this.propagator.propFidelity, this.propagator.propStopCondition, this.propagator.propStopValue)
+    }
+
+    this.propagator.drawConvergence()
+    // this.propagator.targetObject.copy(this.propagator.originalObject)
+
+    return [this.propagator.currentControlValue, this.propagator.segmentTimer.timeSinceCreation]
   }
 
   parseUserMissionPhase(content) {
-    const directives = content.split(",")
-    console.log(directives)
-
+    var directives = content.split(",")
     if(directives[0].includes("Target")) {
       this.propagator.currentControlValue = 0
     	var value = parseFloat(directives[0].slice(14, directives[0].length))
+      this.propagator.tolerance = 0.0001 //DEFAULT
       switch(directives[0].slice(7, 11)) {
         case "RMAG":
           this.propagator.targetParameter = "distToEarth"
@@ -64,17 +60,26 @@ class Mission {
         case "SPFE":
           this.propagator.targetParameter = "specificE"
           this.propagator.equalityCondition = value
-          this.propagator.tolerance = 0.0001
           break
         case "RAPO":
           this.propagator.targetParameter = "radapo"
           this.propagator.equalityCondition = value
-          this.propagator.tolerance = 0.0001
           break
         case "RPER":
           this.propagator.targetParameter = "radper"
           this.propagator.equalityCondition = value
-          this.propagator.tolerance = 0.0001
+          break
+        case "SMAX":
+          this.propagator.targetParameter = "a"
+          this.propagator.equalityCondition = value
+          break
+        case "VELM":
+          this.propagator.targetParameter = "velMoon"
+          this.propagator.equalityCondition = value
+          break
+        case "POSM":
+          this.propagator.targetParameter = "posMoon"
+          this.propagator.equalityCondition = value
           break
       }
 

@@ -20,13 +20,19 @@ class GravSat {
     this.apoapsisVector = createVector(-1, 0)
     this.dvUsed = 0
     this.isPreviousState = isPreviousState
+    this.stillInOnePiece = 1
+    this.deltaT = deltaT
+    this.missionSegment = 0
+    this.haltPropagation = 0
+    this.velMoon = createVector(0, 0)
+    this.posMoon = createVector(0, 0)
 
     if(!this.isPreviousState) {
       this.previousObjectState = new GravSat(100, 0, this.mass, 1)
     }
   }
 
-  orbitUpdate(halt, propFidelity) {
+  orbitUpdate(halt, propFidelity, currentMoon) {
     //SAVE THIS STATE
     if(!this.isPreviousState) {
       this.copy(this.previousObjectState)
@@ -39,19 +45,16 @@ class GravSat {
         var fmag = G * this.gravitySourceMass / gravVector.mag() ** 2
 
         this.acc = p5.Vector.mult(gravUnitVector, fmag)
-        this.vel = createVector(this.vel.x + this.acc.x * deltaT / propFidelity, this.vel.y + this.acc.y * deltaT / propFidelity)
-        this.pos = createVector(this.pos.x + this.vel.x * deltaT / propFidelity, this.pos.y + this.vel.y * deltaT / propFidelity)
+        this.vel = createVector(this.vel.x + this.acc.x * this.deltaT / propFidelity, this.vel.y + this.acc.y * this.deltaT / propFidelity)
+        this.pos = createVector(this.pos.x + this.vel.x * this.deltaT / propFidelity, this.pos.y + this.vel.y * this.deltaT / propFidelity)
 
         this.distToEarth = createVector(earth.pos.x - this.pos.x, earth.pos.y - this.pos.y).mag()
-        this.distToMoon = createVector(moon.pos.x - this.pos.x, moon.pos.y - this.pos.y).mag()
-        this.a = (this.apoapsis + this.periapsis) / 2
+        this.distToMoon = createVector(currentMoon.pos.x - this.pos.x, currentMoon.pos.y - this.pos.y).mag()
 
         if(this.distToEarth * 2 < earth.mass) {
-          console.log("we're in the earth", this.distToEarth.toFixed(2) * 2, earth.mass, this.pos.x)
           return 0
         }
-        if(this.distToMoon * 2 < moon.mass) {
-          console.log("we're in the moon", this.distToMoon.toFixed(2) * 2, moon.mass, this.pos.x)
+        if(this.distToMoon * 2 < currentMoon.mass) {
           return 0
         }
       }
@@ -85,6 +88,9 @@ class GravSat {
     copyInto.dvUsed = parseFloat(this.dvUsed)
     copyInto.mass = parseFloat(this.mass)
     copyInto.ecc = parseFloat(this.ecc)
+    copyInto.deltaT = parseFloat(this.deltaT)
+    copyInto.velMoon = createVector(this.velMoon.x, this.velMoon.y)
+    copyInto.posMoon = createVector(this.posMoon.x, this.posMoon.y)
   }
 
   checkSOI() {
@@ -109,7 +115,7 @@ class GravSat {
     }
   }
 
-  calculateElements() {
+  calculateElements(currentMoon) {
     this.theta = this.gravityVector.angleBetween(createVector(this.apoapsisVector.x, this.apoapsisVector.y)) + PI
 
     this.r_for_cross = createVector(this.pos.x - earth.pos.x, this.pos.y - earth.pos.y, 0)
@@ -122,6 +128,12 @@ class GravSat {
     this.period = 2 * PI * ((this.a) ** 3 / (G * earth.mass)) ** 0.5
     this.ecc = (this.apoapsis - this.periapsis) / (this.apoapsis + this.periapsis)
     this.a = (this.periapsis + this.apoapsis) / 2
+
+    this.vectorToEarth = createVector(earth.pos.x - this.pos.x, earth.pos.y - this.pos.y)
+    this.vectorToMoon = createVector(currentMoon.pos.x - this.pos.x, currentMoon.pos.y - this.pos.y)
+    this.velMoon = createVector(-currentMoon.vel.x + this.vel.x, -currentMoon.vel.y + this.vel.y)
+    this.posMoon = createVector(-currentMoon.pos.x + this.pos.x, -currentMoon.pos.y + this.pos.y)
+
   }
 
   displayElements() {
@@ -141,6 +153,8 @@ class GravSat {
     text("disttoearth: " + this.distToEarth.toFixed(1), 100, 280)
     text("framerate: " + frameRate().toFixed(2), 100, 300)
     text("dvused: " + this.dvUsed.toFixed(2), 100, 320)
+    text("velmoon: " + this.velMoon.x.toFixed(2) + ", " + this.velMoon.y.toFixed(2), 100, 340)
+    text("posmoon: " + this.posMoon.x.toFixed(2) + ", " + this.posMoon.y.toFixed(2), 100, 360)
     pop()
   }
 
@@ -153,11 +167,18 @@ class GravSat {
     var propagator = new Targeter(this, "noChange", null, 1, "apoapsis", null, "burnV", 0.00, 100, 0.01)
     propagator.propagate(propagator.propFidelity, "apoapsis", "CORRECTING_DO_NOT_SUBCALL")
     this.apoapsisVector = createVector(propagator.targetObject.gravityVector.x, propagator.targetObject.gravityVector.y)
-    propagator.propagate(propagator.propFidelity, "periapsis", "CORRECTING_DO_NOT_SUBCALL")
+
+    if(propagator.propSuccess == 1) {
+      propagator.propagate(propagator.propFidelity, "periapsis", "CORRECTING_DO_NOT_SUBCALL")
+    }
+
     this.periapsisVector = createVector(propagator.targetObject.gravityVector.x, propagator.targetObject.gravityVector.y)
+
+    if(propagator.propSuccess == 1) {
+      propagator.propagate(propagator.propFidelity, "apoapsis", "CORRECTING_DO_NOT_SUBCALL")
+    }
     this.apoapsis = this.apoapsisVector.mag()
     this.periapsis = this.periapsisVector.mag()
-    // time.halt = 0
   }
 
   executeManeuver(dv) {

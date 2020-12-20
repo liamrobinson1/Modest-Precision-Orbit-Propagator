@@ -17,7 +17,6 @@ var earthDrawRadius = 50
 
 let moon
 let tempMoon
-var moonPos = 0
 var moonAngle = 0
 var moonOrbitRadius = 250
 var moonDrawRadius = 10
@@ -26,11 +25,13 @@ var moonMass = 10
 let falcon
 let falconcopy
 let falconTrail = []
-var transferFrame = 10
+var transferFrame = 4
 
 let missionSequence
 
 let satImage
+let moonImage
+let earthImage
 
 function preload() {
   satImage = loadImage('assets/saturnV.png')
@@ -39,18 +40,19 @@ function preload() {
 }
 
 function setup() {
-  frameRate(30)
+  frameRate(60)
   createCanvas(windowWidth, windowHeight)
   w = windowWidth
   h = windowHeight
   earth = new Earth(earthMass, w / 2, h / 2)
-  moon = new Moon(moonMass, moonOrbitRadius, earth, 0, -2 * PI / 1000)
+  moon = new Moon(moonMass, moonOrbitRadius, earth, 0, 0)
   falcon = new GravSat(satOrbitalRadius, satAngle, satMass, 0)
   falconcopy = new GravSat(satOrbitalRadius, satAngle, satMass, 0)
+  falcon.missionAnimTimer = new Time(falcon.deltaT)
+
   falcon.copy(falconcopy)
-  // missionSequence = new Mission(["Propagate, to FREL = 2000", "Propagate, to periapsis", "Target RAPO = 350, at apoapsis", "Target RPER = 350, at apoapsis"], falcon)
-  missionSequence = new Mission(["Propagate, to periapsis", "Target RMAG = 170, at apoapsis", "Target ECCE = 0.0007, at FREL = 1000", "Target PERD = 420, at FREL = 6"], falcon)
-  time = new Time()
+  missionSequence = new Mission(["Propagate, to FREL = 20", "Propagate, to apoapsis", "Target POSM = 400, at FREL = 100"], falcon)
+  time = new Time(deltaT)
   resizeImages()
 }
 
@@ -59,8 +61,6 @@ function draw() {
   time.update()
 
   //UPDATE AND DRAW PLANETS AND MOONS
-  moonPos = createVector(moonOrbitRadius * cos(moonAngle) + earth.pos.x, moonOrbitRadius * sin(moonAngle) + earth.pos
-  .y)
   earth.show()
   moon.show()
   moon.drawSOI()
@@ -70,52 +70,84 @@ function draw() {
   //UPDATE AND SHOW THE SAT
   falcon.showSat()
   falcon.checkSOI()
-  // if(keyIsDown(RIGHT_ARROW)) {
-  falcon.orbitUpdate(time.halt, 1)
-  // }
+
+  if(falcon.stillInOnePiece == 1 && time.currentFrame < transferFrame) {
+    falcon.stillInOnePiece = falcon.orbitUpdate(time.halt, 1, moon)
+  }
+
   if(frameCount == 2) {
     falcon.correctThetaFindRs()
   }
 
+  if(time.currentFrame >= transferFrame && falcon.haltPropagation == 0 && !time.halt) {
+    if(falcon.missionSegment == 0 && falcon.missionAnimTimer.timeSinceCreation == 0) {
+      missionSequence.printSequence()
+    }
 
-  if(time.currentFrame > transferFrame && falcon.transferComplete == 0) {
-    // falcon.enterTransfer()
-    missionSequence.printSequence()
-    missionSequence.executeSequence()
-    // console.log(falcon.vel.x, falcon.vel.y)
-    // falcon.vel.x = 0.0079857
-    // falcon.executeManeuver(0.21868)
-    // console.log(falcon.vel.x, falcon.vel.y)
-    falcon.transferComplete = 1
-  }
-  else if(time.currentFrame > transferFrame) {
-    falcon.correctThetaFindRs()
-    falcon.displayElements()
-    // console.log(falcon.theta, falcon.distToEarth, falcon.vel.x, falcon.vel.y)
+    if(falcon.missionSegment < missionSequence.sequence.length) {
+      if(falcon.missionAnimTimer.timeSinceCreation == 0) {
+        var results = missionSequence.executeSequence(falcon.missionSegment)
+        missionSequence.burnMagnitude = results[0]
+        missionSequence.framesToWait = results[1]
+        console.log("Our results are: ", results)
+        falcon.executeManeuver(missionSequence.burnMagnitude)
+
+        falcon.stillInOnePiece = falcon.orbitUpdate(time.halt, 1, moon)
+        falcon.correctThetaFindRs()
+        falcon.calculateElements(moon)
+        falcon.displayElements()
+        falcon.showSat()
+        missionSequence.propagator.drawConvergence()
+        falcon.missionAnimTimer.timeSinceCreation += 1
+      }
+      //IF WE"RE IN THE MIDDLE OF A SEGMENT
+      else if(falcon.missionAnimTimer.timeSinceCreation < missionSequence.framesToWait && falcon.stillInOnePiece == 1) {
+        // console.log('executing', falcon.pos)
+        falcon.stillInOnePiece = falcon.orbitUpdate(time.halt, 1, moon)
+        falcon.correctThetaFindRs()
+        falcon.calculateElements(moon)
+        falcon.displayElements()
+        falcon.showSat()
+        falcon.missionAnimTimer.timeSinceCreation += 1
+      }
+      //IF WE"VE COMPLETED THE CURRENT SEGMENT
+      else if(falcon.missionAnimTimer.timeSinceCreation == missionSequence.framesToWait) {
+        falcon.missionAnimTimer.timeSinceCreation = 0
+        falcon.missionSegment += 1
+        console.log("Moving on!")
+      }
+    }
+    else if(falcon.stillInOnePiece) {
+      falcon.transferComplete = 1
+      falcon.stillInOnePiece = falcon.orbitUpdate(time.halt, 1, moon)
+      falcon.correctThetaFindRs()
+      falcon.calculateElements(moon)
+      falcon.displayElements()
+      falcon.showSat()
+
+      if(keyIsDown(190)) {
+        falcon.executeManeuver(0.016)
+        falcon.correctThetaFindRs(0)
+      }
+      if(keyIsDown(188)) {
+        falcon.executeManeuver(-0.016)
+        falcon.correctThetaFindRs(0)
+      }
+
+      if(keyIsDown(ESCAPE)) {
+        time.halt = 1
+      }
+    }
+    else {
+      falcon.showSat()
+      falcon.displayElements()
+    }
   }
 
-  if(time.currentFrame % 5 == 0) {
+  if(time.currentFrame % 1 == 0) {
     falconTrail.push([falcon.pos.x, falcon.pos.y])
   }
-  falcon.calculateElements()
   // falcon.displayFutureTrajectory(500)
-
-  if(keyIsDown(RIGHT_ARROW)) {
-    falcon.executeManeuver(0.008)
-    falcon.correctThetaFindRs()
-    console.log(falcon.dvUsed)
-  }
-  if(keyIsDown(LEFT_ARROW)) {
-    falcon.executeManeuver(-0.008)
-    falcon.correctThetaFindRs()
-  }
-
-  if(keyIsDown(UP_ARROW)) {
-    time.halt = 1
-  }
-  if(keyIsDown(DOWN_ARROW)) {
-    time.halt = 0
-  }
 
   noFill()
   push()

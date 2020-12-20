@@ -1,7 +1,7 @@
 class Targeter {
   constructor(targetObject, targetParameter, targetValue, propFidelity, propStopCondition, propStopValue, controlVariable, userGuess, attemptLimit, tolerance) {
     let tempSat = new GravSat(targetObject.distToEarth, 0, satMass, 0)
-    tempMoon = new Moon(parseFloat(moon.mass), parseFloat(moon.r), earth, parseFloat(moon.theta))
+    let tempMoon = new Moon(parseFloat(moon.mass), parseFloat(moon.r), earth, parseFloat(moon.theta))
     targetObject.copy(tempSat)
     this.originalObject = targetObject
     this.targetObject = tempSat
@@ -33,7 +33,7 @@ class Targeter {
   propagateStep(i, stopConditionValue, propFidelity) {
     this.targetMoon.propagate()
     this.targetObject.propagateSOI(this.targetMoon)
-    this.targetObject.orbitUpdate(0, propFidelity)
+    this.propSuccess = parseInt(this.targetObject.orbitUpdate(0, propFidelity, this.targetMoon))
 
     //FINDING E AND THINGS
     if(i == 1 && stopConditionValue != "CORRECTING_DO_NOT_SUBCALL") {
@@ -41,15 +41,15 @@ class Targeter {
       // this.targetObject.displayElements()
     }
 
-    this.targetObject.calculateElements()
+    this.targetObject.calculateElements(this.targetMoon)
     this.propTrail.push([this.targetObject.pos.x, this.targetObject.pos.y])
   }
 
   propagate(propFidelity, stopCondition, stopConditionValue) {
+    this.convergenceStatus = "nominal"
     this.propTrail = []
     this.propSuccess = 1
     time.currentFrame += 1
-    time.halt = 1
 
     this.targetObject.executeManeuver(this.currentControlValue)
 
@@ -76,20 +76,20 @@ class Targeter {
         var fixed = 0
         var secondPreviousR = 0
         var previousR = parseFloat(this.targetObject.distToEarth - 1)
-        while((!(Math.sign(previousR - this.targetObject.distToEarth) == Math.sign(previousR - secondPreviousR)) || (previousR < this.targetObject.distToEarth)) && this.propSuccess == 1 && (i < 1000) || i < 3) {
+
+        while((!(Math.sign(previousR - this.targetObject.distToEarth) == Math.sign(previousR - secondPreviousR)) || (previousR < this.targetObject.distToEarth)) && this.propSuccess == 1 && ((i < 2000) || i < 3)) {
           this.targetMoon.propagate()
           secondPreviousR = previousR
           previousR = parseFloat(this.targetObject.distToEarth)
           this.targetObject.propagateSOI(this.targetMoon)
-          this.propSuccess = parseInt(this.targetObject.orbitUpdate(0, propFidelity))
+          this.propSuccess = parseInt(this.targetObject.orbitUpdate(0, propFidelity, this.targetMoon))
 
           //FINDING E AND THINGS
           if(i == 1 && stopConditionValue != "CORRECTING_DO_NOT_SUBCALL") {
             this.targetObject.correctThetaFindRs()
-            // this.targetObject.displayElements()
           }
 
-          this.targetObject.calculateElements()
+          this.targetObject.calculateElements(this.targetMoon)
           this.propTrail.push([this.targetObject.pos.x, this.targetObject.pos.y])
           i += 1
           if(secondPreviousR < previousR && fixed == 0) {
@@ -106,20 +106,20 @@ class Targeter {
           var fixed = 0
           var secondPreviousR = 0
           var previousR = parseFloat(this.targetObject.distToEarth - 1)
-          while((!(Math.sign(previousR - this.targetObject.distToEarth) == Math.sign(previousR - secondPreviousR)) || (previousR > this.targetObject.distToEarth)) && this.propSuccess == 1 && (i < 1000) || i < 10) {
+
+          while((!(Math.sign(previousR - this.targetObject.distToEarth) == Math.sign(previousR - secondPreviousR)) || (previousR > this.targetObject.distToEarth)) && this.propSuccess == 1 && ((i < 2000) || i < 10)) {
             this.targetMoon.propagate()
             secondPreviousR = previousR
             previousR = parseFloat(this.targetObject.distToEarth)
             this.targetObject.propagateSOI(this.targetMoon)
-            this.propSuccess = parseInt(this.targetObject.orbitUpdate(0, propFidelity))
+            this.propSuccess = parseInt(this.targetObject.orbitUpdate(0, propFidelity, this.targetMoon))
 
             //FINDING E AND THINGS
             if(i == 1 && stopConditionValue != "CORRECTING_DO_NOT_SUBCALL") {
               this.targetObject.correctThetaFindRs()
-              // this.targetObject.displayElements()
             }
 
-            this.targetObject.calculateElements()
+            this.targetObject.calculateElements(this.targetMoon)
             this.propTrail.push([this.targetObject.pos.x, this.targetObject.pos.y])
             i += 1
           }
@@ -135,14 +135,11 @@ class Targeter {
           }
           break
     }
-    if(frameCount % 20 == 0) {
-      console.log("Did the propagation fail? " + (!this.propSuccess).toString())
-    }
 
     push()
     beginShape()
     noFill()
-    stroke(255, 0, 0, 40)
+    stroke(100, 100, 150)
     for(var i = 0; i < this.propTrail.length; i++) {
       vertex(this.propTrail[i][0], this.propTrail[i][1])
     }
@@ -160,6 +157,8 @@ class Targeter {
     }
     endShape()
     pop()
+    this.segmentTimer.timeSinceCreation += this.propTrail.length
+    time.halt = 1
   }
 
   updateFunctions() {
@@ -212,6 +211,24 @@ class Targeter {
         this.currentFcnValue = parseFloat(this.equalityParameter - this.equalityCondition)
         break
 
+      case "a":
+        this.equalityParameter = parseFloat(this.targetObject.a)
+        this.previousFcnValue = parseFloat(this.currentFcnValue)
+        this.currentFcnValue = parseFloat(this.equalityParameter - this.equalityCondition)
+        break
+
+      case "velMoon":
+        this.equalityParameter = parseFloat(this.targetObject.velMoon.mag())
+        this.previousFcnValue = parseFloat(this.currentFcnValue)
+        this.currentFcnValue = parseFloat(this.equalityParameter - this.equalityCondition)
+        break
+
+      case "posMoon":
+        this.equalityParameter = parseFloat(this.targetObject.posMoon.mag())
+        this.previousFcnValue = parseFloat(this.currentFcnValue)
+        this.currentFcnValue = parseFloat(this.equalityParameter - this.equalityCondition)
+        break
+
       default:
         break
     }
@@ -248,12 +265,15 @@ class Targeter {
       this.updateFunctions()
     }
     if(abs(this.currentFcnValue) < this.tolerance) {
+      console.log(abs(this.currentFcnValue),  this.tolerance, this.equalityParameter, this.equalityCondition)
       console.log("Targeter converged on a burn magnitude of " + this.currentControlValue.toFixed(5))
       this.targetObject.dvUsed += this.currentControlValue
-      this.targetObject.calculateElements()
+      this.targetObject.calculateElements(this.targetMoon)
     }
     else {
-      console.log("No convergence")
+      console.log(abs(this.currentFcnValue),  this.tolerance, this.equalityParameter, this.equalityCondition)
+      this.originalObject.haltPropagation = 1
+      alert("No convergence")
     }
   }
 }

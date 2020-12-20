@@ -13,20 +13,22 @@ class Moon {
     if(time.halt == 0) {
       this.theta += this.thetaDot
       this.pos = createVector(this.r * cos(this.theta) + earth.pos.x, this.r * sin(this.theta) + earth.pos.y)
+      this.vel = createVector(this.thetaDot * cos(this.theta), this.thetaDot * sin(this.theta))
     }
   }
 
   propagate() {
     this.theta += this.thetaDot
     this.pos = createVector(this.r * cos(this.theta) + earth.pos.x, this.r * sin(this.theta) + earth.pos.y)
+    this.vel = createVector(this.thetaDot * cos(this.theta), this.thetaDot * sin(this.theta))
   }
 
   show() {
-    push()
-    noStroke()
-    fill(172, 82, 137)
-    ellipse(this.pos.x, this.pos.y, this.mass, this.mass)
-    pop()
+    // push()
+    // noStroke()
+    // fill(172, 82, 137)
+    // ellipse(this.pos.x, this.pos.y, this.mass, this.mass)
+    // pop()
   }
 
   drawSOI() {
@@ -72,12 +74,14 @@ class Time {
       this.currentFrame += 1
       this.timeSinceCreation += this.delta
     }
+    if(this.halt == 1 && keyIsDown(ENTER)) {
+      this.halt = 0
+    }
   }
 }
 
 function addImages() {
   push()
-  // image(satImage, falcon.pos.x, falcon.pos.y)
   translate(earth.pos.x, earth.pos.y)
   rotate(moon.theta * 30)
   image(earthImage, -earth.mass / 2 - 1, -earth.mass / 2 - 1)
