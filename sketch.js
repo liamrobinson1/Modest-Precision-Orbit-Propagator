@@ -74,8 +74,8 @@ function setup() {
   falcon.missionAnimTimer = new Time(falcon.deltaT)
 
   falcon.copy(falconcopy)
-  // missionSequence = new Mission(["Propagate, to FREL = 2", "Propagate, to MANG = 1.5", "Target BDTT = 0.5, at apoapsis", "Propagate, to moonperiapsis", "Target MECC = 0.13, at FREL = 2"], falcon)
-  missionSequence = new Mission([], falcon)
+  missionSequence = new Mission(["Propagate, to FREL = 2", "Propagate, to MANG = 1.5", "Target MECC = 0.70, at moonperiapsis", "Target MECC = 0.18, at FREL = 3", "Propagate, to moonperiapsis", "Target MECC = 0.01, at FREL = 3"], falcon)
+  // missionSequence = new Mission([], falcon)
 
   time = new Time(deltaT)
   resizeImages()

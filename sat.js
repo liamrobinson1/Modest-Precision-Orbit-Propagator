@@ -227,7 +227,7 @@ class GravSat {
     text("eccmoon: " + this.eccMoon.toFixed(2), 100, 500)
     text("amoon: " + this.aMoon.toFixed(2), 100, 520)
     text("moonperiapsis: " + this.moonPeriapsis.toFixed(2), 100, 40)
-    text("mooneccvec: " + this.eccMoonVector, 100, 540)
+    text("mooneccvec: " + (moon.thetaDot * moon.r), 100, 540)
     pop()
   }
 

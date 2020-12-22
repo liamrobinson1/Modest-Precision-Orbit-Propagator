@@ -19,7 +19,7 @@ class Moon {
         this.theta += this.thetaDot
       }
       this.pos = createVector(this.r * cos(this.theta) + earth.pos.x, this.r * sin(this.theta) + earth.pos.y)
-      this.vel = createVector(this.thetaDot * this.r * sin(this.theta), -this.thetaDot * this.r * cos(this.theta))
+      this.vel = createVector(-this.thetaDot * this.r * sin(this.theta), this.thetaDot * this.r * cos(this.theta))
     }
   }
 
@@ -28,7 +28,7 @@ class Moon {
       this.theta += this.thetaDot * propDirection //here's where we'd change the prop direction
     }
     this.pos = createVector(this.r * cos(this.theta) + earth.pos.x, this.r * sin(this.theta) + earth.pos.y)
-    this.vel = createVector(this.thetaDot * this.r * sin(this.theta), -this.thetaDot * this.r * cos(this.theta))
+    this.vel = createVector(-this.thetaDot * this.r * sin(this.theta), this.thetaDot * this.r * cos(this.theta))
   }
 
   show() {

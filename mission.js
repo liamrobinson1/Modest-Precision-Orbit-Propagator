@@ -91,7 +91,7 @@ class Mission {
         case "BDTT":
           this.propagator.targetParameter = "BdotT"
           this.propagator.equalityCondition = value
-          this.propagator.tolerance = 0.1
+          this.propagator.tolerance = 0.01
           this.propagator.sensetivity = 14
           break
         case "MANG":
