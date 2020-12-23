@@ -30,7 +30,7 @@ class Targeter {
 
   propagateStep(i, stopConditionValue, propFidelity, propDirection, initialSOI, isCorrecting) {
     this.targetMoon.propagate(propDirection, this.targetObject)
-    this.targetObject.propagateSOI(this.targetMoon, stopConditionValue, isCorrecting, initialSOI)
+    this.targetObject.propagateSOI(this.targetMoon, 1, isCorrecting, initialSOI)
     this.propSuccess = parseInt(this.targetObject.orbitUpdate(0, propFidelity, this.targetMoon, propDirection))
 
     //FINDING E AND THINGS
@@ -43,7 +43,7 @@ class Targeter {
   }
 
   propagate(propFidelity, stopCondition, stopConditionValue, propDirection, initialSOI, isCorrecting) {
-    console.log(this.propStepLimit + " PROP STEP LIMIT USED, LOOKING FOR " + stopCondition + " with value " + stopConditionValue)
+    // console.log(this.propStepLimit + " PROP STEP LIMIT USED, LOOKING FOR " + stopCondition + " with value " + stopConditionValue, propDirection, initialSOI, isCorrecting)
     this.targetMoon = new Moon(parseFloat(moon.mass), parseFloat(moon.r), earth, parseFloat(moon.theta), moon.drawRadius)
     this.propTrail = []
     this.propSuccess = 1
@@ -57,6 +57,10 @@ class Targeter {
           if(this.propSuccess == 1) {
             this.propagateStep(j, stopConditionValue, propFidelity, propDirection, "any", isCorrecting)
           }
+        }
+        //FINDING E AND THINGS
+        if(i == 1 && isCorrecting != "CORRECTING_DO_NOT_SUBCALL") {
+          this.targetObject.correctThetaFindRs(5000)
         }
         break
 
@@ -75,6 +79,10 @@ class Targeter {
           time.halt = 0
           this.propagateStep(j, stopConditionValue, propFidelity, propDirection, "moon", isCorrecting)
           i += 1
+        }
+        //FINDING E AND THINGS
+        if(i == 1 && isCorrecting != "CORRECTING_DO_NOT_SUBCALL") {
+          this.targetObject.correctThetaFindRs(5000)
         }
         break
 
@@ -168,6 +176,10 @@ class Targeter {
           this.propagateStep(i, stopConditionValue, propFidelity, propDirection, initialSOI, isCorrecting)
           i += 1
         }
+        //FINDING E AND THINGS
+        if(i == 1 && isCorrecting != "CORRECTING_DO_NOT_SUBCALL") {
+          this.targetObject.correctThetaFindRs(5000)
+        }
         break
     }
     if(isCorrecting == "CORRECTING_DO_NOT_SUBCALL") {
@@ -217,7 +229,11 @@ class Targeter {
         break
 
       case "ecc":
+        // console.log("WE'RE in: ", this.targetObject.currentSOI)
         this.equalityParameter = parseFloat(this.targetObject.ecc)
+        if(this.targetObject.currentSOI == "moon") {
+            this.equalityParameter = parseFloat(this.targetObject.instaEccEarth)
+        }
         this.previousFcnValue = parseFloat(this.currentFcnValue)
         this.currentFcnValue = parseFloat(this.equalityParameter - this.equalityCondition)
         break
@@ -288,6 +304,12 @@ class Targeter {
         this.currentFcnValue = parseFloat(this.equalityParameter - this.equalityCondition)
         break
 
+      case "moonPeriapsis":
+        this.equalityParameter = parseFloat(this.targetObject.moonApoapsis)
+        this.previousFcnValue = parseFloat(this.currentFcnValue)
+        this.currentFcnValue = parseFloat(this.equalityParameter - this.equalityCondition)
+        break
+
       case "moonEccentricity":
         this.equalityParameter = parseFloat(this.targetObject.eccMoon)
         this.previousFcnValue = parseFloat(this.currentFcnValue)
@@ -329,22 +351,22 @@ class Targeter {
       this.currentControlValue += -this.currentFcnValue / fprime / this.sensetivity
 
       if(isNaN(this.currentControlValue) || !isFinite(this.currentControlValue)) {
-        console.log("pre-reset. controls: ", this.currentControlValue, this.previousControlValue, "fcns: ", this.currentFcnValue, this.previousFcnValue)
+        // console.log("pre-reset. controls: ", this.currentControlValue, this.previousControlValue, "fcns: ", this.currentFcnValue, this.previousFcnValue)
         this.currentControlValue = Math.sign(Math.random()) * Math.random() / 10
         this.currentFcnValue = Math.sign(Math.random()) * Math.random() / 10
         this.previousFcnValue = Math.sign(Math.random()) * Math.random() / 10
         this.previousControlValue = Math.sign(Math.random()) * Math.random() / 10
-        console.log("We need a reset. controls: ", this.currentControlValue, this.previousControlValue, "fcns: ", this.currentFcnValue, this.previousFcnValue)
+        // console.log("We need a reset. controls: ", this.currentControlValue, this.previousControlValue, "fcns: ", this.currentFcnValue, this.previousFcnValue)
       }
 
-      console.log("success?", this.propSuccess, "fcnVal", this.currentFcnValue, "controlVal", this.currentControlValue)
+      // console.log("success?", this.propSuccess, "fcnVal", this.currentFcnValue, "controlVal", this.currentControlValue)
 
-      console.log("eccm: " + this.targetObject.eccMoon.toString())
+      // console.log("eccm: " + this.targetObject.eccMoon.toString())
       this.propagate(this.propFidelity, this.propStopCondition, this.propStopValue, propDirection, initialSOI, isCorrecting)
-      console.log("eccm: " + this.targetObject.eccMoon.toString())
+      // console.log("eccm: " + this.targetObject.eccMoon.toString())
       // console.log(fprime, -this.equalityCondition / fprime, this.currentFcnValue.toFixed(2), this.previousFcnValue.toFixed(2), this.previousControlValue.toFixed(2) , this.currentControlValue.toFixed(2))
       this.updateFunctions()
-      console.log("updatedfcnVal", this.currentFcnValue, "controlVal", this.equalityParameter)
+      // console.log("updatedfcnVal", this.currentFcnValue, "controlVal", this.equalityParameter)
     }
     if(abs(this.currentFcnValue) < this.tolerance && this.propSuccess == 1) {
       console.log("Targeter converged on a burn magnitude of " + this.currentControlValue.toFixed(5))

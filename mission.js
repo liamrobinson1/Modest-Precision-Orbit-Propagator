@@ -11,8 +11,8 @@ class Mission {
   }
 
   executeSequence(i) {
-    this.propagator = new Targeter(this.targetObject, "noChange", null, 1, "apoapsis", null, "burnV", 0.00, 200, 0.01, 5000, 1)
-    this.propagator.segmentTimer = new Time(this.targetObject.deltaT)
+    this.propagator = new Targeter(this.targetObject, "noChange", null, 1, "apoapsis", null, "burnV", 0.00, 100, 0.01, 5000, 1)
+    this.propagator.segmentTimer = new Time(this.targetObject.deltaT, 0)
 
     if(this.sequence[i] != "phase") {
       this.parseUserMissionPhase(this.sequence[i])
@@ -91,8 +91,8 @@ class Mission {
         case "BDTT":
           this.propagator.targetParameter = "BdotT"
           this.propagator.equalityCondition = value
-          this.propagator.tolerance = 0.01
-          this.propagator.sensetivity = 14
+          this.propagator.tolerance = 0.1
+          this.propagator.sensetivity = 4
           break
         case "MANG":
           this.propagator.targetParameter = "moonAngle"
@@ -102,11 +102,15 @@ class Mission {
           this.propagator.targetParameter = "moonPeriapsis"
           this.propagator.equalityCondition = value
           break
+        case "MAPO":
+          this.propagator.targetParameter = "moonPeriapsis"
+          this.propagator.equalityCondition = value
+          break
         case "MECC":
           this.propagator.targetParameter = "moonEccentricity"
           this.propagator.equalityCondition = value
           this.propagator.tolerance = 0.05 //DEFAULT
-          this.propagator.sensetivity = 3
+          this.propagator.sensetivity = 7
           break
       }
 

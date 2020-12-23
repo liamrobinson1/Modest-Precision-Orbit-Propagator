@@ -2,7 +2,7 @@
 class GravSat {
   constructor(r, t, satMass, isPreviousState) {
     this.pos = createVector(earth.pos.x + r * cos(t), earth.pos.y + -r * sin(t))
-    this.vel = createVector(-sin(t), cos(t)).mult((G * earth.mass / r) ** 0.5)
+    this.vel = createVector(-sin(t), -cos(t)).mult((G * earth.mass / r) ** 0.5)
     this.acc = createVector(0, 0)
     this.gravityVector = createVector(0, 0)
     this.gravitySourceMass = 0
@@ -28,11 +28,17 @@ class GravSat {
     this.velMoon = createVector(0, 0)
     this.posMoon = createVector(0, 0)
     this.velFlipped = 0
-    this.currentSOI = "earth"
+    this.currentSOI = "any"
     this.mostRecentPath = []
     this.theta = 0
     this.specificE = 0
     this.eccMoon = 0
+    this.eccMoonVector = createVector(0, 0, 0)
+    this.moonPos = createVector(0, 0, 0)
+    this.orbitNormalVector = createVector(0, 0, 1)
+    this.hMoonUnitVector = createVector(0, 0, 1) //THIS SHOULD BE CORRECT FOR PLANAR TRAJECTORIES
+    this.vectorToEarth = createVector(0, 0, 0)
+    this.vectorToMoon = createVector(0, 0, 0)
 
     if(!this.isPreviousState) {
       this.previousObjectState = new GravSat(100, 0, this.mass, 1)
@@ -125,11 +131,15 @@ class GravSat {
     copyInto.deltaT = parseFloat(this.deltaT)
     copyInto.velMoon = createVector(this.velMoon.x, this.velMoon.y)
     copyInto.posMoon = createVector(this.posMoon.x, this.posMoon.y)
-    copyInto.apoapsisVector = createVector(this.apoapsisVector.x, this.apoapsisVector.y)
-    copyInto.periapsisVector = createVector(this.periapsisVector.x, this.periapsisVector.y)
+    copyInto.apoapsisVector = createVector(this.apoapsisVector.x, this.apoapsisVector.y, 0)
+    copyInto.periapsisVector = createVector(this.periapsisVector.x, this.periapsisVector.y, 0)
     copyInto.moonAngle = parseFloat(this.moonAngle)
     copyInto.currentSOI = this.currentSOI.toString()
     copyInto.eccMoon = parseFloat(this.eccMoon)
+    copyInto.eccMoonVector = createVector(this.eccMoonVector.x, this.eccMoonVector.y, this.eccMoonVector.z)
+    copyInto.posMoon = this.posMoon
+    copyInto.orbitNormalVector = this.orbitNormalVector
+    copyInto.instaEccEarth = this.instaEccEarth
   }
 
   checkSOI(propDirection) {
@@ -144,7 +154,7 @@ class GravSat {
   }
 
   propagateSOI(targetMoon, propDirection, isCorrecting, initialSOI) {
-    if(dist(this.pos.x, this.pos.y, targetMoon.pos.x, targetMoon.pos.y) < targetMoon.SOIrad && (initialSOI = "moon" || initialSOI == "any")) {
+    if(dist(this.pos.x, this.pos.y, targetMoon.pos.x, targetMoon.pos.y) < targetMoon.SOIrad && propDirection == 1) {
       this.gravitySourceMass = targetMoon.mass
       this.gravityVector = createVector(targetMoon.pos.x - this.pos.x, targetMoon.pos.y - this.pos.y)
       this.currentSOI = "moon"
@@ -170,6 +180,16 @@ class GravSat {
     this.period = 2 * PI * ((this.a) ** 3 / (G * earth.mass)) ** 0.5
     this.theta = this.periapsisVector.angleBetween(this.vectorToEarth)
 
+    var earthVxH = p5.Vector.cross(this.vel, createVector(0, 0, this.h))
+    var earthUnitPosVector = p5.Vector.div(this.vectorToEarth, -this.vectorToEarth.mag())
+    this.instaEccEarth = p5.Vector.div(earthVxH, this.mu).sub(earthUnitPosVector).mag()
+
+    this.ecc = this.p / this.periapsis - 1
+    this.apoapsis = this.p / (1 - this.ecc)
+    this.a = (this.apoapsis + this.periapsis) / 2
+    this.specificE = -this.mu / (2 * this.a)
+    this.period = 2 * PI * ((this.a) ** 3 / (G * earth.mass)) ** 0.5
+
     if(this.theta > 0) {
       this.theta = 2 * PI - this.theta
     }
@@ -177,24 +197,40 @@ class GravSat {
       this.theta = -this.theta
     }
 
-    this.S = this.velMoon
-    this.T = p5.Vector.cross(this.velMoon, createVector(0, 0, 1))
-    this.R = p5.Vector.cross(this.S, this.T)
-    this.B = p5.Vector.cross(this.S, createVector(0, 0, 1))
-
-    this.BdotR = p5.Vector.dot(this.B, this.R)
-    this.BdotT = p5.Vector.dot(this.B, this.T)
-
+    this.moonPos = p5.Vector.mult(this.vectorToMoon, -1)
     this.moonAngle = -this.vectorToEarth.angleBetween(createVector(earth.pos.x - currentMoon.pos.x, earth.pos.y - currentMoon.pos.y))
-    this.hMoon = p5.Vector.cross(p5.Vector.mult(this.vectorToMoon, -1), this.velMoon).mag()
-
+    this.hMoon = p5.Vector.cross(this.moonPos, this.velMoon).mag()
     this.pMoon = this.hMoon ** 2 / (moon.mass * G)
     var moonVxH = p5.Vector.cross(this.velMoon, createVector(0, 0, this.hMoon))
     var muMoon = G * moon.mass
     var moonUnitPosVector = p5.Vector.div(this.vectorToMoon, -this.vectorToMoon.mag())
     this.eccMoonVector = p5.Vector.div(moonVxH, muMoon).sub(moonUnitPosVector)
     this.eccMoon = this.eccMoonVector.mag()
-    this.aMoon = this.moonPeriapsis / (1 - this.eccMoon)
+    this.aMoon = (2 / this.moonPos.mag() - this.velMoon.mag() ** 2 / (muMoon)) ** -1
+    this.moonApoapsis = this.pMoon / (1 - this.eccMoon)
+
+    if(this.eccMoon > 1) {
+      this.moonBetaAngle = Math.acos(1 / this.eccMoon)
+
+      var s1 = p5.Vector.mult(this.eccMoonVector, cos(this.moonBetaAngle))
+      var s2 = p5.Vector.mult(p5.Vector.cross(this.hMoonUnitVector, this.eccMoonVector), sin(this.moonBetaAngle))
+      this.S = p5.Vector.add(s1, s2)
+      var t1 = p5.Vector.cross(this.S, this.orbitNormalVector)
+      this.T = p5.Vector.div(t1, t1.mag())
+      this.R = p5.Vector.cross(this.S, this.T)
+      var b1 = abs(this.aMoon) * Math.sqrt(this.eccMoon ** 2 - 1)
+      var b2 = p5.Vector.cross(this.S, this.hMoonUnitVector)
+
+      this.B = p5.Vector.mult(b2, b1)
+
+      this.BdotR = p5.Vector.dot(this.B, this.R)
+      this.BdotT = p5.Vector.dot(this.B, this.T)
+    }
+    else {
+      this.B = createVector(0, 0, 0)
+      this.BdotR = 0
+      this.BdotT = -1
+    }
   }
 
   displayElements() {
@@ -227,13 +263,14 @@ class GravSat {
     text("eccmoon: " + this.eccMoon.toFixed(2), 100, 500)
     text("amoon: " + this.aMoon.toFixed(2), 100, 520)
     text("moonperiapsis: " + this.moonPeriapsis.toFixed(2), 100, 40)
-    text("mooneccvec: " + (moon.thetaDot * moon.r), 100, 540)
+    text("eccMoonVector: " + this.eccMoonVector, 100, 540)
+    text("eccEarthVector: " + this.instaEccEarth, 100, 560)
     pop()
   }
 
   displayFutureTrajectory(framesToProp) {
     var propagator = new Targeter(this, "noChange", null, 1, "showFrames", null, "burnV", 0.00, 100, 0.01, null, null)
-    propagator.propagate(propagator.propFidelity, "showFrames", framesToProp, 1, "any", "CORRECTING_DO_NOT_SUBCALL")
+    propagator.propagate(propagator.propFidelity, "showFrames", framesToProp, 1, "moon", "CORRECTING_DO_NOT_SUBCALL")
   }
 
   correctThetaFindRs(maxFrames) {
@@ -242,25 +279,19 @@ class GravSat {
     this.moonPeriapsis = propagator.targetObject.distToMoon
 
     var propagator = new Targeter(this, "noChange", null, 1, "periapsis", null, "burnV", 0.00, 100, 0.01, 5000, null)
-    propagator.propagate(propagator.propFidelity, "periapsis", null, -1, this.currentSOI, "CORRECTING_DO_NOT_SUBCALL")
+    propagator.propagate(propagator.propFidelity, "periapsis", null, -1, "any", "CORRECTING_DO_NOT_SUBCALL")
     this.periapsisVector = createVector(propagator.targetObject.gravityVector.x, propagator.targetObject.gravityVector.y)
 
-    if(this.periapsisVector.mag() > 1000) { //OCCURS WHEN WE"RE ON THE INCOMING HYPERBOLIC ASYMPTOTE
+    if(this.periapsisVector.mag() > 1000 || this.distToMoon < moon.SOIrad) { //OCCURS WHEN WE"RE ON THE INCOMING HYPERBOLIC ASYMPTOTE
+      console.log("FORWARD PROPAGATING BECAUSE", this.distToMoon, moon.SOIrad)
       var propagator = new Targeter(this, "noChange", null, 1, "periapsis", null, "burnV", 0.00, 100, 0.01, 5000, null)
-      propagator.propagate(propagator.propFidelity, "periapsis", null, 1, this.currentSOI, "CORRECTING_DO_NOT_SUBCALL")
+      propagator.propagate(propagator.propFidelity, "periapsis", null, 1, "any", "CORRECTING_DO_NOT_SUBCALL")
       this.periapsisVector = createVector(propagator.targetObject.gravityVector.x, propagator.targetObject.gravityVector.y)
     }
 
     if(propagator.propSuccess == 1) {
-      // this.displayFutureTrajectory(this.period)
       this.periapsis = this.periapsisVector.mag()
     }
-
-    this.ecc = this.p / this.periapsis - 1
-    this.apoapsis = this.p / (1 - this.ecc)
-    this.a = (this.apoapsis + this.periapsis) / 2
-    this.specificE = -this.mu / (2 * this.a)
-    this.period = 2 * PI * ((this.a) ** 3 / (G * earth.mass)) ** 0.5
   }
 
   executeManeuver(dv) {
