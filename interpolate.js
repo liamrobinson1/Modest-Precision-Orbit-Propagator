@@ -3,7 +3,7 @@ function interpolate(t, out, res) {
   ifs = computeInterp(t, out, res)
   var its = []
   var iys = []
-  
+
   for(var i = t[0] + res; i < (t[t.length - 1] - t[0]) + t[0]; i += res) {
     var n = 0
     its.push(i)
@@ -68,49 +68,4 @@ function pieceMealIntep(x1, y1, x2, y2, x3, y3, x4, y4) {
     [x[1], x[4], x[7]],
     [x[2], x[5], x[8]]
   ]
-}
-
-function revArr(arr) {
-  var newArray = [];
-  for (var i = arr.length - 1; i >= 0; i--) {
-    newArray.push(arr[i]);
-  }
-  return newArray;
-}
-
-function rref(A) {
-    var rows = A.length;
-    var columns = A[0].length;
-
-    var lead = 0;
-    for (var k = 0; k < rows; k++) {
-        if (columns <= lead) return;
-
-        var i = k;
-        while (A[i][lead] === 0) {
-            i++;
-            if (rows === i) {
-                i = k;
-                lead++;
-                if (columns === lead) return;
-            }
-        }
-        var irow = A[i], krow = A[k];
-        A[i] = krow, A[k] = irow;
-
-        var val = A[k][lead];
-        for (var j = 0; j < columns; j++) {
-            A[k][j] /= val;
-        }
-
-        for (var i = 0; i < rows; i++) {
-            if (i === k) continue;
-            val = A[i][lead];
-            for (var j = 0; j < columns; j++) {
-                A[i][j] -= val * A[k][j];
-            }
-        }
-        lead++;
-    }
-    return A;
 }

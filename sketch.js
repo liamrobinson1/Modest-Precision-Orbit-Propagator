@@ -30,8 +30,8 @@ var transferFrame = 4
 
 let missionSequence
 // let missionArr = ["Propagate, to FREL = 2", "Propagate, to MANG = 1.2", "Target ECCE = 1.32, at FREL = 3", "Propagate, to FREL = 100", "Target MPER = 30, at moonperiapsis", "Target MECC = 0.05, at FREL = 100", "Propagate, to moonperiapsis", "Propagate, to EVPA = -0.4", "Target MECC = 2.2, at FREL = 30", "Propagate, to periapsis", "Target RMAG = 100, at periapsis", "Target ECCE = 0.01, at apoapsis", "Propagate, to FREL = 2"]
-let missionArr = ["Propagate, to FREL = 2", "Propagate, to MANG = 1.2", "Target ECCE = 1.32, at FREL = 50", "Propagate, to FREL = 100", "Target MPER = 30, at moonperiapsis", "Target MECC = 0.4, at FREL = 100", "Propagate, to EVPA = 0", "Target MECC = 1, at periapsis", "Target RMAG = 100, at periapsis", "Target ECCE = 0.01, at FREL = 40"]
-// let missionArr = ["Propagate, to EVPA = -1"]
+// let missionArr = ["Propagate, to FREL = 2", "Propagate, to MANG = 1.2", "Target ECCE = 1.32, at FREL = 50", "Propagate, to FREL = 100", "Target MPER = 30, at moonperiapsis", "Target MECC = 0.4, at FREL = 100", "Propagate, to EVPA = 0", "Target MECC = 1, at periapsis", "Target RMAG = 100, at periapsis", "Target ECCE = 0.01, at FREL = 40"]
+let missionArr = ["Propagate, to EVPA = -1"]
 
 let satImage
 let moonImage
