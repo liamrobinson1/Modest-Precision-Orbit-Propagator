@@ -2,7 +2,7 @@ var w = 0
 var h = 0
 
 const G = 6.6743 * 10 ** -20
-const SF = 100
+const SF = 50
 
 let time
 var deltaT = 1
@@ -18,8 +18,7 @@ var earthMass = 5.97219 * 10 ** 24
 var earthEqRadius = 6378.1370
 var earthPolRadius = 6356.7523142
 var earthOmega = 7.2921150 * 10 ** -5
-
-const mu = G * earthMass
+var earthAxisTilt = 0.4101524
 
 let moon
 let tempMoon
@@ -33,9 +32,6 @@ let satTrail = [[], [], []]
 var transferFrame = 4
 
 let missionSequence
-// let missionArr = ["Propagate, to FREL = 2", "Propagate, to MANG = 1.2", "Target ECCE = 1.32, at FREL = 3", "Propagate, to FREL = 100", "Target MPER = 30, at moonperiapsis", "Target MECC = 0.05, at FREL = 100", "Propagate, to moonperiapsis", "Propagate, to EVPA = -0.4", "Target MECC = 2.2, at FREL = 30", "Propagate, to periapsis", "Target RMAG = 100, at periapsis", "Target ECCE = 0.01, at apoapsis", "Propagate, to FREL = 2"]
-// let missionArr = ["Propagate, to FREL = 2", "Propagate, to MANG = 1.2", "Target ECCE = 1.32, at FREL = 50", "Propagate, to FREL = 100", "Target MPER = 30, at moonperiapsis", "Target MECC = 0.4, at FREL = 100", "Propagate, to EVPA = 0", "Target MECC = 1, at periapsis", "Target RMAG = 100, at periapsis", "Target ECCE = 0.01, at FREL = 40"]
-// let missionArr = ["Propagate, to EVPA = -1"]
 let missionArr = []
 
 let earthTex
@@ -68,18 +64,15 @@ function setup() {
   frameRate(60)
   createCanvas(windowWidth, windowHeight, WEBGL)
   cameraSetup()
-  perspective(100, 0, 0.0, 500)
-
+  perspective(PI / 3.0, windowWidth / windowHeight, 0.01, 50000)
   w = windowWidth
   h = windowHeight
-  earth = new Earth(earthMass, 0, 0, earthEqRadius, earthPolRadius, earthOmega)
+  earth = new Earth(earthMass, 0, 0, earthEqRadius, earthPolRadius, earthOmega, earthAxisTilt)
   moon = new Moon(moonMass, moonOrbitRadius, earth, 0, moonDrawRadius)
   sat = new GravSat(satOrbitalRadius, satAngle, satMass)
   sat.missionAnimTimer = new Time(sat.deltaT, 0)
 
-  // missionSequence = new Mission(["Propagate, to FREL = 2", "Propagate, to MANG = 1.5", "Target MECC = 0.70, at moonperiapsis", "Target MECC = 0.18, at FREL = 3", "Propagate, to moonperiapsis", "Target MECC = 0.01, at FREL = 3"], sat)
   missionSequence = new Mission(missionArr, sat)
-  // missionSequence = new Mission([], sat)
   plume = new ExhaustPlume(sat.pos, sat.vel.mag(), sat.vel, 20, 0, 0)
 
   time = new Time(deltaT, 1)
@@ -142,4 +135,6 @@ function draw() {
   // sat.displayFutureTrajectory(sat.period / 2, moon)
   sat.saveGroundTrack(earth)
   sat.showGroundTrack()
+  drawVectors()
+  drawEcliptic()
 }

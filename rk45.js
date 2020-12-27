@@ -68,12 +68,12 @@ class RungeKutta45 {
         augp += B[i][j] * p[j + 1]
       }
 
-      k[i + 1] = h * this.dot(0, y[0] + augk, y[1] + augl, y[2] + augm, y[3] + augn, y[4] + augo, y[5] + augp)
-      l[i + 1] = h * this.dot(1, y[0] + augk, y[1] + augl, y[2] + augm, y[3] + augn, y[4] + augo, y[5] + augp)
-      m[i + 1] = h * this.dot(2, y[0] + augk, y[1] + augl, y[2] + augm, y[3] + augn, y[4] + augo, y[5] + augp)
-      n[i + 1] = h * this.dot(3, y[0] + augk, y[1] + augl, y[2] + augm, y[3] + augn, y[4] + augo, y[5] + augp)
-      o[i + 1] = h * this.dot(4, y[0] + augk, y[1] + augl, y[2] + augm, y[3] + augn, y[4] + augo, y[5] + augp)
-      p[i + 1] = h * this.dot(5, y[0] + augk, y[1] + augl, y[2] + augm, y[3] + augn, y[4] + augo, y[5] + augp)
+      k[i + 1] = h * this.dot(0, this.currentTime, y[0] + augk, y[1] + augl, y[2] + augm, y[3] + augn, y[4] + augo, y[5] + augp)
+      l[i + 1] = h * this.dot(1, this.currentTime, y[0] + augk, y[1] + augl, y[2] + augm, y[3] + augn, y[4] + augo, y[5] + augp)
+      m[i + 1] = h * this.dot(2, this.currentTime, y[0] + augk, y[1] + augl, y[2] + augm, y[3] + augn, y[4] + augo, y[5] + augp)
+      n[i + 1] = h * this.dot(3, this.currentTime, y[0] + augk, y[1] + augl, y[2] + augm, y[3] + augn, y[4] + augo, y[5] + augp)
+      o[i + 1] = h * this.dot(4, this.currentTime, y[0] + augk, y[1] + augl, y[2] + augm, y[3] + augn, y[4] + augo, y[5] + augp)
+      p[i + 1] = h * this.dot(5, this.currentTime, y[0] + augk, y[1] + augl, y[2] + augm, y[3] + augn, y[4] + augo, y[5] + augp)
     }
 
     for(var i = 0; i < 6; i++) {
@@ -121,7 +121,9 @@ class RungeKutta45 {
     this.h = 1
   }
 
-  dot(i, y0, y1, y2, y3, y4, y5) {
+  dot(i, t, y0, y1, y2, y3, y4, y5) {
+    var moonPE = moon.queryPosition(t)
+    var moonPS = createVector(y0 - moonPE.x, y1 - moonPE.y, y2 - moonPE.z)
     switch(i) {
       case 0:
         return y3
@@ -130,11 +132,17 @@ class RungeKutta45 {
       case 2:
         return y5
       case 3:
-        return -mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y0
+        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y0 - moon.mu / moonPS.mag() ** 3 * moonPS.x
       case 4:
-        return -mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y1
+        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y1 - moon.mu / moonPS.mag() ** 3 * moonPS.y
       case 5:
-        return -mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y2
+        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y2 - moon.mu / moonPS.mag() ** 3 * moonPS.z
+      // case 3:
+      //   return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y0
+      // case 4:
+      //   return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y1
+      // case 5:
+      //   return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y2
     }
   }
 
