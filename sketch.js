@@ -2,7 +2,6 @@ var w = 0
 var h = 0
 
 const G = 6.6743 * 10 ** -20
-const SF = 50
 
 let time
 var deltaT = 1
@@ -24,11 +23,11 @@ let moon
 let tempMoon
 var moonAngle = 0
 var moonOrbitRadius = 357000
-var moonDrawRadius = 1737.1 / SF
+var moonDrawRadius = 1737.1
 var moonMass = 7.348 * 10 ** 22
 
 let sat
-let satTrail = [[], [], []]
+const satTrail = []
 var transferFrame = 4
 
 let missionSequence
@@ -62,9 +61,9 @@ function preload() {
 
 function setup() {
   frameRate(60)
-  createCanvas(windowWidth, windowHeight, WEBGL)
-  cameraSetup()
-  perspective(PI / 3.0, windowWidth / windowHeight, 0.01, 50000)
+  // createCanvas(windowWidth, windowHeight, WEBGL)
+  // cameraSetup()
+  // perspective(PI / 3.0, windowWidth / windowHeight, 0.01, 50000)
   w = windowWidth
   h = windowHeight
   earth = new Earth(earthMass, 0, 0, earthEqRadius, earthPolRadius, earthOmega, earthAxisTilt)
@@ -80,20 +79,20 @@ function setup() {
 
 function draw() {
   //ORBIT CONTROL
-  orbitControl(1, 1, 0.02)
-  cameraControl()
+  // orbitControl(1, 1, 0.02)
+  // cameraControl()
   scrollActivity = 0
 
   //TIME UPDATE
   time.update()
 
   //UPDATE AND DRAW PLANETS AND MOONS
-  earth.show()
-  moon.show()
+  // earth.show()
+  // moon.show()
   moon.update()
 
   //UPDATE AND SHOW THE SAT
-  sat.displayElements()
+  // sat.displayElements()
   sat.standardTimestep()
 
   if(sat.stillInOnePiece == 1) {
@@ -121,20 +120,19 @@ function draw() {
   }
 
   if(sat.stillInOnePiece == 1 && time.halt == 0 && time.timeSinceCreation % 10 == 0) {
-    satTrail[0].push(sat.pos.x)
-    satTrail[1].push(sat.pos.y)
-    satTrail[2].push(sat.pos.z)
+    satTrail.push(new THREE.Vector3(sat.pos.x, sat.pos.y, sat.pos.z))
   }
 
   if(time.halt == 0) {
     plume.update()
   }
 
-  plume.show()
-  sat.displayFutureTrajectory(2000, earth)
+  // plume.show()
+  // sat.displayFutureTrajectory(10, earth) //WORKING THOUGH!!!
   // sat.displayFutureTrajectory(sat.period / 2, moon)
-  sat.saveGroundTrack(earth)
-  sat.showGroundTrack()
-  drawVectors()
-  drawEcliptic()
+  // sat.saveGroundTrack(earth)
+  // sat.showGroundTrack()
+  // drawVectors()
+  // drawEcliptic()
+  showVertexPath(satTrail, new THREE.Color("rgb(251, 250, 200)"))
 }

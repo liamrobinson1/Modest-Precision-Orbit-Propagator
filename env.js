@@ -26,15 +26,15 @@ class Moon {
 
   show() {
     push()
-    translate(this.pos.x / SF, this.pos.y / SF, this.pos.z / SF)
-    texture(moonTex)
+    translate(this.pos.x , this.pos.y , this.pos.z )
+    // texture(moonTex)
     sphere(this.drawRadius, 100)
     pop()
     push()
     stroke(0, 255, 0)
     noFill()
-    rotateX(PI / 2)
-    ellipse(0, 0, 2 * this.r / SF, 2 * this.r / SF, 24)
+    // rotateX(PI / 2)
+    ellipse(0, 0, 2 * this.r , 2 * this.r , 24)
     pop()
   }
 
@@ -60,20 +60,20 @@ class Earth {
     push()
     noStroke()
     translate(this.pos.x, this.pos.y, this.pos.z)
-    rotateZ(this.axisTilt)
-    rotateY(this.rotation)
-    texture(earthTex)
+    // rotateZ(this.axisTilt)
+    // rotateY(this.rotation)
+    // texture(earthTex)
     // this.approximateSun()
-    ellipsoid(this.eqRad / SF, this.polRad / SF, this.eqRad / SF, 100, 100)
+    // ellipsoid(this.eqRad , this.polRad , this.eqRad , 100, 100)
     pop()
   }
 
   approximateSun() {
     var lightNum = 2
     for(var i = 0; i < lightNum; i++) {
-      pointLight(255, 255, 255, createVector(this.eqRad / SF * 100, 0, 0))
+      // pointLight(255, 255, 255, createVector(this.eqRad  * 100, 0, 0))
     }
-    lightFalloff(0.0, 0.00, 0)
+    // lightFalloff(0.0, 0.00, 0)
   }
 }
 
@@ -112,7 +112,7 @@ function cameraSetup() {
 
 function cameraControl() {
   if(keyIsDown(83) || currentCam == "sat") {
-    satCam.lookAt(sat.pos.x / SF, sat.pos.y / SF, sat.pos.z / SF)
+    satCam.lookAt(sat.pos.x , sat.pos.y , sat.pos.z )
     satCam.setPosition(sat.orbitBinormal.x * 100, sat.orbitBinormal.y * 100, sat.orbitBinormal.z * 100)
     setCamera(satCam)
     currentCam = "sat"
@@ -123,8 +123,8 @@ function cameraControl() {
     currentCam = "earth"
   }
   if(keyIsDown(77) || currentCam == "moon") {
-    moonCam.lookAt(moon.pos.x / SF, moon.pos.y / SF, moon.pos.z / SF)
-    moonCam.setPosition(moon.pos.x / SF, moon.pos.y / SF + 100, moon.pos.z / SF + 100)
+    moonCam.lookAt(moon.pos.x , moon.pos.y , moon.pos.z )
+    moonCam.setPosition(moon.pos.x , moon.pos.y  + 100, moon.pos.z  + 100)
     setCamera(moonCam)
     currentCam = "moon"
   }
@@ -141,12 +141,12 @@ function drawVectors() {
   clif("earthAcc", earthAcc)
 
   push()
-  translate(earth.pos.x / SF, earth.pos.y / SF, earth.pos.z / SF)
+  translate(earth.pos.x , earth.pos.y , earth.pos.z )
   stroke(0, 255, 0)
-  line(0, 0, 0, sat.pos.x / SF, sat.pos.y / SF, sat.pos.z / SF)
+  line(0, 0, 0, sat.pos.x , sat.pos.y , sat.pos.z )
   stroke(200)
-  translate(sat.pos.x / SF, sat.pos.y / SF, sat.pos.z / SF)
-  line(0, 0, 0, (moon.pos.x - sat.pos.x) / SF, (moon.pos.y - sat.pos.y) / SF, (moon.pos.z - sat.pos.z) / SF)
+  translate(sat.pos.x , sat.pos.y , sat.pos.z )
+  line(0, 0, 0, (moon.pos.x - sat.pos.x) , (moon.pos.y - sat.pos.y) , (moon.pos.z - sat.pos.z) )
   strokeWeight(2)
   stroke(255, 0, 0)
   line(0, 0, 0, earthAcc.x, earthAcc.y, earthAcc.z)
@@ -158,7 +158,7 @@ function drawEcliptic() {
   push()
   stroke(255)
   noFill()
-  rotateX(PI / 2)
+  // rotateX(PI / 2)
   plane(300, 300)
   pop()
 }

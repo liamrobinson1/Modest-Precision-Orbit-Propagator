@@ -68,13 +68,9 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     push()
     stroke(0, 200, 200)
     fill(0, 200, 200)
-    translate(this.pos.x / SF, this.pos.y / SF, this.pos.z / SF)
+    translate(this.pos.x, this.pos.y, this.pos.z)
     sphere(this.mass)
     pop()
-  }
-
-  showTrail() {
-    showVertexPath(earth, satTrail[0], satTrail[1], satTrail[2], color(0, 255, 255))
   }
 
   copy(copyInto) {
@@ -168,7 +164,7 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     textFont(myFont)
     textSize(16);
     textAlign(LEFT, TOP);
-    translate(6000 / SF, 0, 0)
+    translate(6000, 0, 0)
     text("timeElapsed in secs: " + frameCount, 100, 20)
     text("VMAG: " + this.VMAG, 100, 40)
     text("disttoearth: " + this.distToEarth, 100, 60)
@@ -211,7 +207,15 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
   displayFutureTrajectory(framesToProp, rb) {
     var propagator = new Propagator(framesToProp, [this.pos.x - rb.pos.x, this.pos.y - rb.pos.y, this.pos.z - rb.pos.z, this.vel.x - rb.vel.x, this.vel.y - rb.vel.y, this.vel.z - rb.vel.z], time.timeSinceCreation, "No Interp")
     this.futureState = propagator.propagate()
-    showVertexPath(rb, this.futureState[1][0], this.futureState[2][0], this.futureState[3][0], color(255, 0, 0))
+
+    var points = []
+    for(var i = 0; i < this.futureState[1][0].length; i++) {
+      if(i % 10 == 0) {
+        points.push(new THREE.Vector3(this.futureState[1][0][i], this.futureState[2][0][i], this.futureState[3][0][i]))
+      }
+    }
+    clif(points)
+    showVertexPath(points, new THREE.Color("rgb(255, 0, 0)"))
   }
 
   saveGroundTrack(body) {
@@ -235,7 +239,7 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     noFill()
     beginShape()
     for(var i = this.groundTrack[0].length - 1; i >= 0; i--) {
-      vertex(this.groundTrack[0][i] / SF, this.groundTrack[1][i] / SF, this.groundTrack[2][i] / SF)
+      vertex(this.groundTrack[0][i], this.groundTrack[1][i], this.groundTrack[2][i])
     }
     endShape()
     pop()
@@ -257,8 +261,8 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
 
   standardTimestep() {
     if(this.stillInOnePiece == 1) {
-      this.showSat()
-      sat.showTrail()
+      // this.showSat()
+      // sat.showTrail()
       this.calculateElements(earth)
       this.stillInOnePiece = this.orbitUpdate(time.halt, 1, moon, 1)
     }

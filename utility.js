@@ -51,18 +51,12 @@ function revArr(arr) {
   return newArray;
 }
 
-function showVertexPath(refbody, x, y, z, col) {
-  push()
-  noFill()
-  beginShape()
-  stroke(col)
-  strokeWeight(1)
-  translate(refbody.pos.x, refbody.pos.y, refbody.pos.z)
-  for(var i = 0; i < x.length; i++) {
-    vertex(x[i] / SF, y[i] / SF, z[i] / SF)
-  }
-  endShape()
-  pop()
+function showVertexPath(points, userColor) {
+  const linemat = new THREE.LineBasicMaterial( { color: userColor } );
+  const geometry = new THREE.BufferGeometry().setFromPoints( points );
+  const line = new THREE.Line( geometry, linemat );
+
+  scene.add( line );
 }
 
 function calculateElements(state, body, requestedElement) { //CALCULATES KEPLERIAN ELEMENTS WITH RESPECT TO A BODY
