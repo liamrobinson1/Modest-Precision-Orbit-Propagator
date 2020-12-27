@@ -108,14 +108,14 @@ class RungeKutta45 {
       ep += Ct[i] * p[i + 1]
     }
 
-    var hk = 0.9 * h * (this.relTol / abs(ek)) ** 0.2
-    var hl = 0.9 * h * (this.relTol / abs(el)) ** 0.2
-    var hm = 0.9 * h * (this.relTol / abs(em)) ** 0.2
-    var hn = 0.9 * h * (this.relTol / abs(en)) ** 0.2
-    var ho = 0.9 * h * (this.relTol / abs(eo)) ** 0.2
-    var hp = 0.9 * h * (this.relTol / abs(ep)) ** 0.2
+    var hk = 0.9 * h * (this.relTol / Math.abs(ek)) ** 0.2
+    var hl = 0.9 * h * (this.relTol / Math.abs(el)) ** 0.2
+    var hm = 0.9 * h * (this.relTol / Math.abs(em)) ** 0.2
+    var hn = 0.9 * h * (this.relTol / Math.abs(en)) ** 0.2
+    var ho = 0.9 * h * (this.relTol / Math.abs(eo)) ** 0.2
+    var hp = 0.9 * h * (this.relTol / Math.abs(ep)) ** 0.2
 
-    this.optStep = min([hk, hl, hm, hn, ho, hp])
+    this.optStep = Math.min([hk, hl, hm, hn, ho, hp])
     this.currentState = [y[0], y[1], y[2], y[3], y[4], y[5]]
     this.h = this.optStep
     this.h = 1
@@ -123,7 +123,7 @@ class RungeKutta45 {
 
   dot(i, t, y0, y1, y2, y3, y4, y5) {
     var moonPE = moon.queryPosition(t)
-    var moonPS = createVector(y0 - moonPE.x, y1 - moonPE.y, y2 - moonPE.z)
+    var moonPS = new THREE.Vector3(y0 - moonPE.x, y1 - moonPE.y, y2 - moonPE.z)
     switch(i) {
       case 0:
         return y3
@@ -132,11 +132,11 @@ class RungeKutta45 {
       case 2:
         return y5
       case 3:
-        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y0 - moon.mu / moonPS.mag() ** 3 * moonPS.x
+        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y0 - moon.mu / moonPS.length() ** 3 * moonPS.x
       case 4:
-        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y1 - moon.mu / moonPS.mag() ** 3 * moonPS.y
+        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y1 - moon.mu / moonPS.length() ** 3 * moonPS.y
       case 5:
-        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y2 - moon.mu / moonPS.mag() ** 3 * moonPS.z
+        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y2 - moon.mu / moonPS.length() ** 3 * moonPS.z
       // case 3:
       //   return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y0
       // case 4:

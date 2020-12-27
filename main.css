@@ -1,0 +1,11 @@
+#info {
+	position: relative;
+	top: 100px;
+	left: 200px;
+	width: 100%;
+	text-align: center;
+	z-index: 1000000;
+	display: block;
+	/* color: white;
+	background: blue; */
+}

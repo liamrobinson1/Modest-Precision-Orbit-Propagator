@@ -1,18 +1,18 @@
 class Propagator {
-  constructor(framesElapsed, initialState, initialTime, interp, resolution) {
+  constructor(framesElapsed, step, initialState, initialTime, interp, resolution) {
     this.toInterp = interp
     this.framesToPropagate = framesElapsed
     this.initialState = initialState
     this.state = initialState
     this.initialTime = initialTime
-    this.integrator = new RungeKutta45(initialTime, initialState, 1, framesElapsed, 10 ** -6)
+    this.integrator = new RungeKutta45(initialTime, initialState, step, framesElapsed, 10 ** -6)
     this.resolutionForDisplay = resolution
   }
 
   evaluateStoppingCondition() {
     var elementValue = calculateElements(this.state, earth, this.stopCondition)
     this.valueHistory.push(elementValue)
-    if(abs(this.stopValue - elementValue) < this.tolerance) {
+    if(Math.abs(this.stopValue - elementValue) < this.tolerance) {
       return true
     }
     else {
@@ -21,7 +21,7 @@ class Propagator {
   }
 
   propagate() {
-    if(frameCount % 100 == 0) {
+    if(time.timeSinceCreation % (100 * time.delta) == 0) {
       tic("500 frame prop")
     }
 
@@ -39,7 +39,7 @@ class Propagator {
       var yinterp = interpolate(t, y, this.resolutionForDisplay)
       var zinterp = interpolate(t, z, this.resolutionForDisplay)
     }
-    if(frameCount % 100 == 0) {
+    if(time.timeSinceCreation % (100 * time.delta) == 0) {
       toc("500 frame prop")
     }
     return [[t], [x], [y], [z], [vx], [vy], [vz]]
@@ -72,8 +72,8 @@ class Propagator {
   }
 
   adaptStepSize() {
-    if(abs(this.valueHistory[this.valueHistory.length - 1] - this.valueHistory[0]) / abs(this.stopValue - this.valueHistory[0]) > 0.6) {
-      if(abs(this.valueHistory[this.valueHistory.length - 1] - this.valueHistory[this.valueHistory.length - 2]) > this.tolerance / 2) {
+    if(Math.abs(this.valueHistory[this.valueHistory.length - 1] - this.valueHistory[0]) / Math.abs(this.stopValue - this.valueHistory[0]) > 0.6) {
+      if(Math.abs(this.valueHistory[this.valueHistory.length - 1] - this.valueHistory[this.valueHistory.length - 2]) > this.tolerance / 2) {
         this.stepSize = this.stepSize * 0.8
       }
     }

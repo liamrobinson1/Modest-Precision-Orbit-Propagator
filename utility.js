@@ -52,31 +52,35 @@ function revArr(arr) {
 }
 
 function showVertexPath(points, userColor) {
-  const linemat = new THREE.LineBasicMaterial( { color: userColor } );
-  const geometry = new THREE.BufferGeometry().setFromPoints( points );
-  const line = new THREE.Line( geometry, linemat );
+  const geom = new THREE.BufferGeometry().setFromPoints(points);
+  const lineMat = new THREE.LineBasicMaterial( { color: userColor } );
+  const line = new THREE.Line(geom, lineMat);
 
-  scene.add( line );
+  scene.add(line)
 }
 
 function calculateElements(state, body, requestedElement) { //CALCULATES KEPLERIAN ELEMENTS WITH RESPECT TO A BODY
   var mu = G * body.mass
 
-  var rBody = createVector(state[0] - body.pos.x, state[1] - body.pos.y, state[2] - body.pos.z)
-  var vBody = createVector(state[3] - body.vel.x, state[4] - body.vel.y, state[5] - body.vel.z)
+  var rBody = new THREE.Vector3(state[0] - body.pos.x, state[1] - body.pos.y, state[2] - body.pos.z)
+  var vBody = new THREE.Vector3(state[3] - body.vel.x, state[4] - body.vel.y, state[5] - body.vel.z)
 
-  var rBodyHat = p5.Vector.div(rBody, rBody.mag())
-  var vBodyHat = p5.Vector.div(vBody, vBody.mag())
+  var rBodyHat = rBody.copy()
+  var vBodyHat = vBody.copy()
 
-  rmag = rBody.mag()
-  var vmag = vBody.mag()
+  rBodyHat.divideScalar(rBody.length())
+  vBodyHat.divideScalar(vBody.length())
 
-  var vectorToBody = p5.Vector.mult(rBody, -1)
+  rmag = rBody.length()
+  var vmag = vBody.length()
 
-  var bodyPosVelAngle = vBody.angleBetween(vectorToBody)
+  var vectorToBody = new THREE.Vector3(-rBody.x, -rBody.y, -rBody.z)
 
-  var hVector = p5.Vector.cross(rBody, vBody)
-  var h = hVector.mag()
+  var bodyPosVelAngle = vBody.angleTo(vectorToBody)
+
+  var hVector = new THREE.Vector3()
+  hVector.crossVectors(rBody, vBody)
+  var h = hVector.length()
 
   var orbitNormal = p5.Vector.div(hVector, h)
 
@@ -102,7 +106,7 @@ function calculateElements(state, body, requestedElement) { //CALCULATES KEPLERI
   }
 
   if(ecc > 1) {
-    hyperbolicElements(ecc, eccVector, orbitNormal, a)
+    // hyperbolicElements(ecc, eccVector, orbitNormal, a)
   }
 
   switch(requestedElement) {
@@ -114,34 +118,43 @@ function calculateElements(state, body, requestedElement) { //CALCULATES KEPLERI
   }
 }
 
-function hyperbolicElements(ecc, eccVector, orbitNormal, a) {
-  var betaAngle = acos(1 / ecc)
-
-  var s1 = p5.Vector.mult(eccVector, cos(betaAngle))
-  var s2 = p5.Vector.mult(p5.Vector.cross(orbitNormal, eccVector), sin(betaAngle))
-
-  var S = p5.Vector.add(s1, s2)
-
-  var t1 = p5.Vector.cross(S, orbitNormal)
-
-  var T = p5.Vector.div(t1, t1.mag())
-  var R = p5.Vector.cross(S, T)
-
-  var b1 = abs(a) * (ecc ** 2 - 1) ** 0.5
-  var b2 = p5.Vector.cross(S, orbitNormal)
-
-  var B = p5.Vector.mult(b2, b1)
-
-  var BdotR = p5.Vector.dot(B, R)
-  var BdotT = p5.Vector.dot(B, T)
-}
+// function hyperbolicElements(ecc, eccVector, orbitNormal, a) {
+//   var betaAngle = acos(1 / ecc)
+//
+//   var s1 = p5.Vector.mult(eccVector, cos(betaAngle))
+//   var s2 = p5.Vector.mult(p5.Vector.cross(orbitNormal, eccVector), sin(betaAngle))
+//
+//   var S = p5.Vector.add(s1, s2)
+//
+//   var t1 = p5.Vector.cross(S, orbitNormal)
+//
+//   var T = p5.Vector.div(t1, t1.length())
+//   var R = p5.Vector.cross(S, T)
+//
+//   var b1 = abs(a) * (ecc ** 2 - 1) ** 0.5
+//   var b2 = p5.Vector.cross(S, orbitNormal)
+//
+//   var B = p5.Vector.mult(b2, b1)
+//
+//   var BdotR = p5.Vector.dot(B, R)
+//   var BdotT = p5.Vector.dot(B, T)
+// }
 
 function mouseWheel(event) {
   scrollActivity = 1
 }
 
 function clif(str, vari) {
-  if(frameCount % 100 == 0) {
+  if(time.timeSinceCreation % 100 * time.delta == 0) {
     console.log(str, vari)
+  }
+}
+
+function removeEntities(object) {
+  var i = 0
+  for(var i = scene.children.length - 1; i >= 0; i--) {
+    if(scene.children[i].type == "Line") {
+      scene.remove(scene.children[i])
+    }
   }
 }
