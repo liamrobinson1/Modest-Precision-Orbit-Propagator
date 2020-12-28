@@ -57,9 +57,9 @@ class Propagator {
     var i = 0
 
     tic("propagationTimer")
-    while(this.evaluateStoppingCondition() == false && i < 1000) {
+    while(this.evaluateStoppingCondition() == false && i < 5000) {
       i += 1
-      this.integrator = new RungeKutta45(this.elapsedTime, this.state, this.stepSize, 1, 10 ** -6)
+      this.integrator = new RungeKutta45(this.elapsedTime, this.state, this.stepSize, this.stepSize, 10 ** -6)
       this.results = this.integrator.iterate()
 
       this.extractAndSetState()

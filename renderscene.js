@@ -1,3 +1,5 @@
+var p5 = new p5();
+
 var mesh, renderer, scene, cam, controls
 
 const G = 6.6743 * 10 ** -20
@@ -22,7 +24,6 @@ var earthEqRadius = 6378.1370
 var earthPolRadius = 6356.7523142
 var earthOmega = 7.2921150 * 10 ** -5
 var earthAxisTilt = 0.4101524
-// var earthAxisTilt = 0
 
 let moon
 let moonRender
@@ -40,6 +41,7 @@ var sunRadius = 696340
 
 let missionSequence
 let missionArr = []
+let executed = 0
 
 var planet_data = [{
 name: 'EARTH',
@@ -104,10 +106,18 @@ function init() {
 }
 
 function animate() {
-    removeEntities()
-    requestAnimationFrame(animate);
-    sat.standardTimestep()
-    environmentalUpdates()
+  time.update()
+  requestAnimationFrame(animate);
+    if(time.halt == 0) {
+      removeEntities()
+      sat.standardTimestep()
+      environmentalUpdates()
+
+      // if(time.timeSinceCreation == 100 && executed == 0) {
+      //   sat.propToApoapsis(earth)
+      //   executed = 1
+      // }
+    }
     renderer.render(scene, cam);
 }
 

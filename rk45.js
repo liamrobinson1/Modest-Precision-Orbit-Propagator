@@ -124,6 +124,10 @@ class RungeKutta45 {
   dot(i, t, y0, y1, y2, y3, y4, y5) {
     var moonPE = moon.queryPosition(t)
     var moonPS = new THREE.Vector3(y0 - moonPE.x, y1 - moonPE.y, y2 - moonPE.z)
+    const J2 = 1082.64 * 10 ** -6
+
+    var r = (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 0.5
+
     switch(i) {
       case 0:
         return y3
@@ -132,11 +136,11 @@ class RungeKutta45 {
       case 2:
         return y5
       case 3:
-        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y0 - moon.mu / moonPS.length() ** 3 * moonPS.x
+        return -earth.mu / r ** 3 * y0 * (1 - J2 * 3 / 2 * (earth.eqRad / r) ** 2 * (5 * y2 ** 2 / r ** 2 - 1)) - moon.mu / moonPS.length() ** 3 * moonPS.x
       case 4:
-        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y1 - moon.mu / moonPS.length() ** 3 * moonPS.y
+        return -earth.mu / r ** 3 * y1 * (1 + J2 * 3 / 2 * (earth.eqRad / r) ** 3 * (3 - 5 * y2 ** 2 / r ** 2)) - moon.mu / moonPS.length() ** 3 * moonPS.y
       case 5:
-        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y2 - moon.mu / moonPS.length() ** 3 * moonPS.z
+        return -earth.mu / r ** 3 * y2 * (1 - J2 * 3 / 2 * (earth.eqRad / r) ** 2 * (5 * y2 ** 2 / r ** 2 - 1)) - moon.mu / moonPS.length() ** 3 * moonPS.z
       // case 3:
       //   return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y0
       // case 4:

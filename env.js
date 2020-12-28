@@ -75,6 +75,7 @@ class Time {
     this.keyPressedLastFrame = 0
     this.masterTime = isMasterTime
     this.burnMagnitude = 0
+    this.softLock = NaN
   }
 
   update() {
@@ -82,8 +83,21 @@ class Time {
       this.currentFrame += 1
       this.timeSinceCreation += this.delta
     }
-    if(this.halt == 1 && keyIsDown(ENTER)) {
+    if(this.softLock > 0 && this.halt == 0) {
+      this.softLock -= this.delta
+      console.log(this.softLock)
+    }
+    else if(this.softLock <= 0 && this.halt == 0) {
+      this.halt = 1
+      console.log("locking")
+    }
+    if(this.halt == 1 && p5.keyIsDown(ENTER) && this.softLock > 0) {
       this.halt = 0
+      console.log("unlocking")
+    }
+    else if(this.halt == 1 && p5.keyIsDown(ENTER) && time.softLock <= 0) {
+      time.halt = 0
+      time.softLock = NaN
     }
   }
 }
@@ -119,7 +133,6 @@ class Time {
 // }
 
 function environmentalUpdates() {
-  time.update()
   moon.update()
   moonRender.position.x = moon.pos.x
   moonRender.position.y = moon.pos.y

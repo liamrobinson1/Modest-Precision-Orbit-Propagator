@@ -1,9 +1,7 @@
 function setup() {
-  frameRate(60)
   w = windowWidth
   h = windowHeight
   sat.missionAnimTimer = new Time(sat.deltaT, 0)
-
   missionSequence = new Mission(missionArr, sat)
 }
 
@@ -25,7 +23,7 @@ function draw() {
       if(keyIsDown(ESCAPE)) {
         time.halt = 1
       }
-
+      
       if(!keyIsDown(190) && !keyIsDown(190) && time.keyPressedLastFrame == 1) {
         time.keyPressedLastFrame = 0
         time.burnMagnitude = 0

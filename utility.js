@@ -65,13 +65,16 @@ function calculateElements(state, body, requestedElement) { //CALCULATES KEPLERI
   var rBody = new THREE.Vector3(state[0] - body.pos.x, state[1] - body.pos.y, state[2] - body.pos.z)
   var vBody = new THREE.Vector3(state[3] - body.vel.x, state[4] - body.vel.y, state[5] - body.vel.z)
 
-  var rBodyHat = rBody.copy()
-  var vBodyHat = vBody.copy()
+  var rBodyHat = new THREE.Vector3()
+  var vBodyHat = new THREE.Vector3()
+
+  rBodyHat.copy(rBody)
+  vBodyHat.copy(vBody)
 
   rBodyHat.divideScalar(rBody.length())
   vBodyHat.divideScalar(vBody.length())
 
-  rmag = rBody.length()
+  var rmag = rBody.length()
   var vmag = vBody.length()
 
   var vectorToBody = new THREE.Vector3(-rBody.x, -rBody.y, -rBody.z)
@@ -82,27 +85,31 @@ function calculateElements(state, body, requestedElement) { //CALCULATES KEPLERI
   hVector.crossVectors(rBody, vBody)
   var h = hVector.length()
 
-  var orbitNormal = p5.Vector.div(hVector, h)
+  var orbitNormal = new THREE.Vector3()
+  orbitNormal.copy(hVector).divideScalar(h)
 
-  var orbitBinormal = p5.Vector.cross(vBodyHat, orbitNormal)
+  var orbitBinormal = new THREE.Vector3()
+  orbitBinormal.crossVectors(vBodyHat, orbitNormal)
 
   var a = 1 / (2 / rmag - vmag ** 2 / mu)
   var period = 2 * PI * ((a) ** 3 / mu) ** 0.5
   var p = h ** 2 / mu
   var e = -mu / (2 * a)
   var ecc = (1 + 2 * e * h ** 2 / mu ** 2) ** 0.5
-  var eccVector = p5.Vector.cross(vBody, hVector).div(mu).sub(rBodyHat)
+
+  var eccVector = new THREE.Vector3()
+  eccVector.copy(vBody).cross(hVector).divideScalar(mu).sub(rBodyHat)
 
   var apoapsis = a * (1 + ecc)
   var periapsis = a * (1 - ecc)
 
-  var gamma = acos(h / (rmag * vmag))
+  var gamma = Math.acos(h / (rmag * vmag))
 
-  if(p5.Vector.dot(rBody, vBody) > 0) {
-    theta = acos((p / rmag - 1) / ecc)
+  if(rBody.dot(vBody) > 0) {
+    theta = Math.acos((p / rmag - 1) / ecc)
   }
   else {
-    theta = 2 * PI - acos((p / rmag - 1) / ecc)
+    theta = 2 * PI - Math.acos((p / rmag - 1) / ecc)
   }
 
   if(ecc > 1) {

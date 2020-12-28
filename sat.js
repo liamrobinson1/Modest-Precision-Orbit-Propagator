@@ -166,28 +166,30 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
   }
 
   saveGroundTrack(body) {
-    if(time.timeSinceCreation % (10 * time.delta) == 0) {
-      var pt = new THREE.Vector3()
-      pt.copy(this.rBodyHat)
-      pt.multiplyScalar(earth.eqRad + 20)
-      this.groundTrack[0].push(pt.x)
-      this.groundTrack[1].push(pt.y)
-      this.groundTrack[2].push(pt.z)
-    }
-    for(var i = 0; i < this.groundTrack[0].length; i++) {
-      var why = new THREE.Vector3(this.groundTrack[0][i], this.groundTrack[1][i], this.groundTrack[2][i])
+    if(time.halt == 0) {
+      if(time.timeSinceCreation % (10 * time.delta) == 0) {
+        var pt = new THREE.Vector3()
+        pt.copy(this.rBodyHat)
+        pt.multiplyScalar(earth.eqRad + 20)
+        this.groundTrack[0].push(pt.x)
+        this.groundTrack[1].push(pt.y)
+        this.groundTrack[2].push(pt.z)
+      }
+      for(var i = 0; i < this.groundTrack[0].length; i++) {
+        var why = new THREE.Vector3(this.groundTrack[0][i], this.groundTrack[1][i], this.groundTrack[2][i])
 
-      why.applyMatrix3(earth.toEq)
+        why.applyMatrix3(earth.toEq)
 
-      why.x = why.x * Math.cos(earth.omega * time.delta) + why.z * Math.sin(earth.omega * time.delta)
-      why.z = -why.x * Math.sin(earth.omega * time.delta) + why.z * Math.cos(earth.omega * time.delta)
+        why.x = why.x * Math.cos(earth.omega * time.delta) + why.z * Math.sin(earth.omega * time.delta)
+        why.z = -why.x * Math.sin(earth.omega * time.delta) + why.z * Math.cos(earth.omega * time.delta)
 
-      why.applyMatrix3(earth.toEc)
+        why.applyMatrix3(earth.toEc)
 
-      why.setLength(earth.eqRad + 70)
-      this.groundTrack[0][i] = why.x
-      this.groundTrack[1][i] = why.y
-      this.groundTrack[2][i] = why.z
+        why.setLength(earth.eqRad + 70)
+        this.groundTrack[0][i] = why.x
+        this.groundTrack[1][i] = why.y
+        this.groundTrack[2][i] = why.z
+      }
     }
   }
 
@@ -226,7 +228,7 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
       this.saveGroundTrack(earth)
       this.showGroundTrack()
     }
-    sat.displayFutureTrajectory(1000, earth)
+    // sat.displayFutureTrajectory(1000, earth)
 
     if(time.timeSinceCreation % (4 * time.delta) == 0) {
       sat.displayElements()
@@ -244,29 +246,29 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
   propToApoapsis(body) {
     var propagator = new Propagator(2, 1, [this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z], time.timeSinceCreation, "No Interp", 1)
     var timeToPropagate = propagator.propagateToValue(body, "theta", PI, 0.01, 1)
-    this.displayFutureTrajectory(timeToPropagate)
+    time.softLock = timeToPropagate //LOCKS THE USER OUT FOR SECONDS REQUIRED TO GET HERE
+    this.displayFutureTrajectory(timeToPropagate, body)
     time.halt = 1
   }
 
   propToPeriapsis(body) {
     var propagator = new Propagator(2, 1, [this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z], time.timeSinceCreation, "No Interp", 1)
     var timeToPropagate = propagator.propagateToValue(body, "theta", 2 * PI, 0.01, 1)
-    this.displayFutureTrajectory(timeToPropagate)
+    this.displayFutureTrajectory(timeToPropagate, body)
     time.halt = 1
   }
 
   propToTheta(body, thetaValue) {
     var propagator = new Propagator(2, 1, [this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z], time.timeSinceCreation, "No Interp", 1)
     var timeToPropagate = propagator.propagateToValue(body, "theta", thetaValue, 0.01, 1)
-    this.displayFutureTrajectory(timeToPropagate)
+    this.displayFutureTrajectory(timeToPropagate, body)
     time.halt = 1
   }
 
   propToPosVelAngle(body, angle) {
-    console.log(angle)
     var propagator = new Propagator(2, 1, [this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z], time.timeSinceCreation, "No Interp", 1)
     var timeToPropagate = propagator.propagateToValue(body, "bodyAngle", angle, 0.01, 1)
-    this.displayFutureTrajectory(timeToPropagate)
+    this.displayFutureTrajectory(timeToPropagate, body)
     time.halt = 1
   }
 }
