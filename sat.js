@@ -106,10 +106,10 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     this.periapsis = this.a * (1 - this.ecc)
 
     this.gamma = Math.acos(this.h / (this.RMAG * this.VMAG))
-    this.n = new THREE.Vector3(-this.hVector.z, this.hVector.x, 0) //USED IN FINDING RAAN
+    this.n = new THREE.Vector3(this.hVector.z, this.hVector.x, 0) //USED IN FINDING RAAN
 
     //CALCULATING RAAN
-    if(this.n.z >= 0) {
+    if(this.n.y >= 0) {
       this.RAAN = Math.acos(this.n.x / this.n.length())
     }
     else {
