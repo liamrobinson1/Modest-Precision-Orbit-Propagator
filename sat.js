@@ -5,6 +5,9 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     // this.vel = new THREE.Vector3(-sin(t), -cos(t) + 0.00001, .4).mult((G * earth.mass / r) ** 0.5)
     this.pos = new THREE.Vector3(1867.27869, -5349.42646, 3744.90429)
     this.vel = new THREE.Vector3(6.292274371, -0.820936859, -4.298237588)
+    // this.pos = new THREE.Vector3(35786, 0, 0)
+    // this.vel = new THREE.Vector3(0, -0.01, -3.33742925385)
+
     this.acc = new THREE.Vector3(0, 0, 0)
     this.gravityVector = new THREE.Vector3(0, 0, 0)
     this.gravitySourceMass = 0
@@ -33,17 +36,20 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     this.eccMoonVector = new THREE.Vector3(0, 0, 0)
     this.moonPos = new THREE.Vector3(0, 0, 0)
     this.earthPosVelAngle = 0
-    this.state = [0, this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z]
+    this.state = [this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z]
     this.groundTrack = [[], [], []]
   }
 
   orbitUpdate(halt, step) {
     if(halt == 0) {
-      var propagator = new Propagator(2 * step, step, [this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z], time.timeSinceCreation, "No Interp")
-      this.state = propagator.propagate()
+      var propagator = new Propagator(2 * step, step, this.state, time.timeSinceCreation, "No Interp")
+      var res = propagator.propagate()
+      this.state = [res[1], res[2], res[3], res[4], res[5], res[6]]
 
-      this.vel = new THREE.Vector3(this.state[4][0][1], this.state[5][0][1], this.state[6][0][1])
-      this.pos = new THREE.Vector3(this.state[1][0][1], this.state[2][0][1], this.state[3][0][1])
+      this.pos = new THREE.Vector3(this.state[0][0][1], this.state[1][0][1], this.state[2][0][1])
+      this.vel = new THREE.Vector3(this.state[3][0][1], this.state[4][0][1], this.state[5][0][1])
+
+      this.state = [this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z]
 
       if(this.distToEarth < earth.eqRad) {
         return 0
@@ -63,6 +69,7 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
 
     this.rBody = new THREE.Vector3(this.pos.x - body.pos.x, this.pos.y - body.pos.y, this.pos.z - body.pos.z)
     this.vBody = new THREE.Vector3(this.vel.x - body.vel.x, this.vel.y - body.vel.y, this.vel.z - body.vel.z)
+    this.state = [this.rBody.x, this.rBody.y, this.rBody.z, this.vBody.x, this.vBody.y, this.vBody.z]
 
     //PLACEHOLDERS UNTIL I FIX
     this.distToEarth = new THREE.Vector3(this.pos.x - earth.pos.x, this.pos.y - earth.pos.y, this.pos.z - earth.pos.z).length()
@@ -92,13 +99,36 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     this.p = this.h ** 2 / this.mu
     this.e = -this.mu / (2 * this.a)
     this.ecc = (1 + 2 * this.e * this.h ** 2 / this.mu ** 2) ** 0.5
-    // this.eccVector = p5.Vector.cross(this.vBody, this.hVector).div(this.mu).sub(this.rBodyHat)
+    this.eccVector = new THREE.Vector3()
+    this.eccVector.crossVectors(this.vBody, this.hVector).divideScalar(this.mu).sub(this.rBodyHat)
 
     this.apoapsis = this.a * (1 + this.ecc)
     this.periapsis = this.a * (1 - this.ecc)
 
     this.gamma = Math.acos(this.h / (this.RMAG * this.VMAG))
+    this.n = new THREE.Vector3(-this.hVector.z, this.hVector.x, 0) //USED IN FINDING RAAN
 
+    //CALCULATING RAAN
+    if(this.n.z >= 0) {
+      this.RAAN = Math.acos(this.n.x / this.n.length())
+    }
+    else {
+      this.RAAN = 2 * PI - Math.acos(this.n.x / this.n.length())
+    }
+    // this.RAAN += 3 * PI//I know this is bad. having THREE.js's y-hat pointing up isn't doing any favors
+
+    //CALCULATING AOP
+    this.lineOfNodes = new THREE.Vector3(0, 1, 0)
+    this.lineOfNodes.cross(this.hVector)
+
+    if(this.eccVector.y >= 0) {
+      this.AOP = Math.acos(this.lineOfNodes.dot(this.eccVector) / (this.lineOfNodes.length() * this.eccVector.length()))
+    }
+    else {
+      this.AOP = 2 * PI - Math.acos(this.lineOfNodes.dot(this.eccVector) / (this.lineOfNodes.length() * this.eccVector.length()))
+    }
+
+    //CALCULATING TRUE ANOMALY
     if(this.rBody.dot(this.vBody) > 0) {
       this.theta = Math.acos((this.p / this.RMAG - 1) / this.ecc)
     }
@@ -115,17 +145,20 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     var txt = ""
     txt += "timeElapsed in secs: " + time.timeSinceCreation + "\n"
     txt += "VMAG: " + this.VMAG + "\n"
-    txt += "disttoearth: " + this.distToEarth + "\n"
     txt += "RMAG: " + this.RMAG + "\n"
-    txt += "gamma: " + this.gamma + "\n"
     txt += "h: " + this.h + "\n"
-    txt += "theta: " + this.theta + "\n"
     txt += "specificE: " + this.e + "\n"
     txt += "period: " + this.period + "\n"
     txt += "ecc: " + this.ecc + "\n"
+    txt += "eccvector: " + this.eccVector.x + " " + this.eccVector.y + " " + this.eccVector.z + "\n"
+    txt += "line of nodes: " + this.lineOfNodes.x + " " + this.lineOfNodes.y + " " + this.lineOfNodes.z + "\n"
     txt += "apo: " + this.apoapsis + "\n"
     txt += "peri: " + this.periapsis + "\n"
     txt += "a: " + this.a + "\n"
+    txt += "gamma: " + this.gamma + "\n"
+    txt += "theta: " + this.theta + "\n"
+    txt += "raan: " + this.RAAN + "\n"
+    txt += "aop: " + this.AOP + "\n"
 
     document.getElementById("info").innerText = txt
   }
@@ -152,13 +185,13 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     this.BdotT = p5.Vector.dot(this.B, this.T)
   }
 
-  displayFutureTrajectory(framesToProp, rb) {
-    var propagator = new Propagator(framesToProp, 10, [this.pos.x - rb.pos.x, this.pos.y - rb.pos.y, this.pos.z - rb.pos.z, this.vel.x - rb.vel.x, this.vel.y - rb.vel.y, this.vel.z - rb.vel.z], time.timeSinceCreation, "No Interp")
+  displayFutureTrajectory(framesToProp, rb, state) {
+    var propagator = new Propagator(framesToProp, 10, [state[0] - rb.pos.x, state[1] - rb.pos.y, state[2] - rb.pos.z, state[3] - rb.vel.x, state[4] - rb.vel.y, state[5] - rb.vel.z], time.timeSinceCreation, "No Interp")
     this.futureState = propagator.propagate()
 
     var drawPoints = []
     for(var i = 0; i < this.futureState[1][0].length; i++) {
-      if(i % 20 == 0) {
+      if(i % 10 == 0) {
         drawPoints.push(new THREE.Vector3(this.futureState[1][0][i], this.futureState[2][0][i], this.futureState[3][0][i]))
       }
     }
@@ -167,7 +200,7 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
 
   saveGroundTrack(body) {
     if(time.halt == 0) {
-      if(time.timeSinceCreation % (10 * time.delta) == 0) {
+      if(time.timeSinceCreation % (5 * time.delta) == 0) {
         var pt = new THREE.Vector3()
         pt.copy(this.rBodyHat)
         pt.multiplyScalar(earth.eqRad + 20)
@@ -212,11 +245,12 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
         this.vel.add(dvVector.multiplyScalar(dv))
         break
       case "B":
-      var dvVector = new THREE.Vector3()
-      dvVector.copy(this.orbitBinormal)
-      this.vel.add(dvVector.multiplyScalar(dv))
-      break
+        var dvVector = new THREE.Vector3()
+        dvVector.copy(this.orbitBinormal)
+        this.vel.add(dvVector.multiplyScalar(dv))
+        break
     }
+    this.calculateElements(earth)
   }
 
   standardTimestep() {
@@ -228,10 +262,23 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
       this.saveGroundTrack(earth)
       this.showGroundTrack()
     }
-    // sat.displayFutureTrajectory(1000, earth)
+    // sat.displayFutureTrajectory(1000, earth, this.state)
 
     if(time.timeSinceCreation % (4 * time.delta) == 0) {
       sat.displayElements()
+    }
+  }
+
+  animateTimestep() {
+    if(this.stillInOnePiece == 1) {
+      this.calculateElements(earth)
+      this.showTrail()
+      this.saveGroundTrack(earth)
+      this.showGroundTrack()
+    }
+
+    if(frameCount % 4 == 0) {
+      this.displayElements()
     }
   }
 
@@ -242,33 +289,51 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     showVertexPath(pastPoints, new THREE.Color('rgb(255, 0, 0)'))
   }
 
-  //ORBITAL MANEUVERS
-  propToApoapsis(body) {
-    var propagator = new Propagator(2, 1, [this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z], time.timeSinceCreation, "No Interp", 1)
-    var timeToPropagate = propagator.propagateToValue(body, "theta", PI, 0.01, 1)
-    time.softLock = timeToPropagate //LOCKS THE USER OUT FOR SECONDS REQUIRED TO GET HERE
-    this.displayFutureTrajectory(timeToPropagate, body)
-    time.halt = 1
+  prepareForAnimation(body, stepSize, propagator) {
+    this.displayFutureTrajectory(propagator.elapsedTime, body, this.state)
+    animator.trajectoryArray = propagator.stateHistory
+    animator.timeToAnimate = propagator.elapsedTime
+    animator.animating = true
+    animator.stepSize = stepSize
+    mission.ready == true
   }
 
-  propToPeriapsis(body) {
-    var propagator = new Propagator(2, 1, [this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z], time.timeSinceCreation, "No Interp", 1)
-    var timeToPropagate = propagator.propagateToValue(body, "theta", 2 * PI, 0.01, 1)
-    this.displayFutureTrajectory(timeToPropagate, body)
-    time.halt = 1
+  //ORBITAL MANEUVERS
+  propToApoapsis(body, stepSize) {
+    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 5)
+    propagator.propagateToValue(body, "theta", PI, 0.01, stepSize)
+
+    this.prepareForAnimation(earth, stepSize, propagator)
+  }
+
+  propToPeriapsis(body, stepSize) {
+    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 5)
+    propagator.propagateToValue(body, "theta", 2 * PI, 0.01, stepSize)
+
+    this.prepareForAnimation(earth, stepSize, propagator)
+  }
+
+  propToNode(body) {
+    var stepSize = 1
+    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
+    propagator.propagateToValue(body, "y", 0, 1, stepSize)
+
+    this.prepareForAnimation(earth, stepSize, propagator)
   }
 
   propToTheta(body, thetaValue) {
-    var propagator = new Propagator(2, 1, [this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z], time.timeSinceCreation, "No Interp", 1)
-    var timeToPropagate = propagator.propagateToValue(body, "theta", thetaValue, 0.01, 1)
-    this.displayFutureTrajectory(timeToPropagate, body)
-    time.halt = 1
+    var stepSize = 1
+    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
+    var timeToPropagate = propagator.propagateToValue(body, "theta", thetaValue, 0.01, stepSize)
+
+    this.prepareForAnimation(body, stepSize, propagator)
   }
 
   propToPosVelAngle(body, angle) {
-    var propagator = new Propagator(2, 1, [this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z], time.timeSinceCreation, "No Interp", 1)
-    var timeToPropagate = propagator.propagateToValue(body, "bodyAngle", angle, 0.01, 1)
-    this.displayFutureTrajectory(timeToPropagate, body)
-    time.halt = 1
+    var stepSize = 1
+    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
+    var timeToPropagate = propagator.propagateToValue(body, "bodyAngle", angle, 0.01, stepSize)
+
+    this.prepareForAnimation(body, stepSize, propagator)
   }
 }

@@ -4,7 +4,7 @@ class Moon {
     this.mu = bodyMass * G
     this.r = orbitRad
     this.theta = thetaNaught
-    this.thetaDot = -((G * earthMass / this.r) ** 0.5) / this.r * deltaT
+    this.thetaDot = -((G * earthMass / this.r) ** 0.5) / this.r * time.delta
     this.pos = new THREE.Vector3(0, 0, 0)
     this.period = -2 * PI / this.thetaDot
     this.drawRadius = drawRadius
@@ -57,10 +57,16 @@ class Earth {
     this.toEc.set(1, 0, 0, 0, Math.cos(-this.axisTilt), Math.sin(-this.axisTilt), 0, -Math.sin(-this.axisTilt), Math.cos(-this.axisTilt))
     this.toEq = new THREE.Matrix3()
     this.toEq.set(1, 0, 0, 0, Math.cos(-this.axisTilt), -Math.sin(-this.axisTilt), 0, Math.sin(-this.axisTilt), Math.cos(-this.axisTilt))
+    this.rotation = 0
   }
 
   show() {
-    this.rotation = this.omega * time.timeSinceCreation
+    if(animator.animating == false) {
+      this.rotation += this.omega * time.delta
+    }
+    else {
+      this.rotation += this.omega * animator.framesMod * time.delta
+    }
     earthRender.rotation.y = this.rotation
     earthRender.rotation.x = this.axisTilt
   }
@@ -69,13 +75,12 @@ class Earth {
 class Time {
   constructor(deltaT, isMasterTime) {
     this.currentFrame = 0
-    this.halt = 0
+    this.halt = 1
     this.delta = deltaT
     this.timeSinceCreation = 0
     this.keyPressedLastFrame = 0
     this.masterTime = isMasterTime
     this.burnMagnitude = 0
-    this.softLock = NaN
   }
 
   update() {
@@ -83,21 +88,12 @@ class Time {
       this.currentFrame += 1
       this.timeSinceCreation += this.delta
     }
-    if(this.softLock > 0 && this.halt == 0) {
-      this.softLock -= this.delta
-      console.log(this.softLock)
-    }
-    else if(this.softLock <= 0 && this.halt == 0) {
-      this.halt = 1
-      console.log("locking")
-    }
-    if(this.halt == 1 && p5.keyIsDown(ENTER) && this.softLock > 0) {
+
+    if(this.halt == 1 && p5.keyIsDown(ENTER)) {
       this.halt = 0
-      console.log("unlocking")
     }
-    else if(this.halt == 1 && p5.keyIsDown(ENTER) && time.softLock <= 0) {
-      time.halt = 0
-      time.softLock = NaN
+    if(this.timeSinceCreation == mission.executionTime) {
+      mission.ready = true
     }
   }
 }

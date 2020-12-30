@@ -85,6 +85,8 @@ function calculateElements(state, body, requestedElement) { //CALCULATES KEPLERI
   hVector.crossVectors(rBody, vBody)
   var h = hVector.length()
 
+  var i = Math.acos(hVector.z / h) * 180 / PI
+
   var orbitNormal = new THREE.Vector3()
   orbitNormal.copy(hVector).divideScalar(h)
 
@@ -120,8 +122,31 @@ function calculateElements(state, body, requestedElement) { //CALCULATES KEPLERI
     case "theta":
       return theta
     case "bodyAngle":
-      console.log("returning bodyangle")
       return bodyPosVelAngle
+    case "ecc":
+      return ecc
+    case "apoapsis":
+      return apoapsis
+    case "periapsis":
+      return periapsis
+    case "p":
+      return p
+    case "a":
+      return a
+    case "h":
+      return h
+    case "period":
+      return period
+    case "vmag":
+      return vmag
+    case "i":
+      return i
+    case "y":
+      return rBody.y
+    case "orbitNormal":
+      return orbitNormal
+    case "orbitBinormal":
+      return orbitBinormal
   }
 }
 
@@ -146,10 +171,6 @@ function calculateElements(state, body, requestedElement) { //CALCULATES KEPLERI
 //   var BdotR = p5.Vector.dot(B, R)
 //   var BdotT = p5.Vector.dot(B, T)
 // }
-
-function mouseWheel(event) {
-  scrollActivity = 1
-}
 
 function clif(str, vari) {
   if(time.timeSinceCreation % 100 * time.delta == 0) {

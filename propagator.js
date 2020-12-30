@@ -53,26 +53,29 @@ class Propagator {
     this.stepSize = stepSize
     this.initialStepSize = stepSize
     this.valueHistory = []
+    this.stateHistory = []
 
     var i = 0
 
+    console.log(this.stopCondition, this.stepSize, this.stopValue, this.tolerance)
+
     tic("propagationTimer")
-    while(this.evaluateStoppingCondition() == false && i < 5000) {
+    while((this.evaluateStoppingCondition() == false && i < 10000) || i < 100) {
       i += 1
       this.integrator = new RungeKutta45(this.elapsedTime, this.state, this.stepSize, this.stepSize, 10 ** -6)
       this.results = this.integrator.iterate()
 
       this.extractAndSetState()
+      this.stateHistory.push(this.state)
       this.elapsedTime += this.stepSize
       this.adaptStepSize() //ENSURES THAT WE DON'T SKIP OUR VALUE
     }
     console.log("We must propagate for ", this.elapsedTime, this.valueHistory)
     toc("propagationTimer")
-    return this.elapsedTime
   }
 
   adaptStepSize() {
-    if(Math.abs(this.valueHistory[this.valueHistory.length - 1] - this.valueHistory[0]) / Math.abs(this.stopValue - this.valueHistory[0]) > 0.6) {
+    if(Math.abs(this.valueHistory[this.valueHistory.length - 1] - this.valueHistory[0]) / Math.abs(this.stopValue - this.valueHistory[0]) > 0.94) {
       if(Math.abs(this.valueHistory[this.valueHistory.length - 1] - this.valueHistory[this.valueHistory.length - 2]) > this.tolerance / 2) {
         this.stepSize = this.stepSize * 0.8
       }
@@ -91,5 +94,53 @@ class Propagator {
     var pointsComputed = t.length
 
     this.state = [x[1], y[1], z[1], vx[1], vy[1], vz[1]]
+  }
+}
+
+
+class Animator {
+  constructor(framesMod) {
+    this.framesMod = framesMod
+    this.trajectoryArray = []
+    this.i = 0
+    this.animating = false
+  }
+
+  showNextStep() {
+    var nextPoint = this.trajectoryArray[this.i]
+    sat.pos.x = nextPoint[0]
+    sat.pos.y = nextPoint[1]
+    sat.pos.z = nextPoint[2]
+    sat.vel.x = nextPoint[3]
+    sat.vel.y = nextPoint[4]
+    sat.vel.z = nextPoint[5]
+
+    sat.animateTimestep()
+    environmentalUpdates()
+
+    this.i += this.framesMod
+    time.timeSinceCreation += animator.stepSize
+    time.delta = animator.stepSize
+
+    if(this.i >= this.trajectoryArray.length - 1) {
+      sat.pos.x = this.trajectoryArray[this.trajectoryArray.length - 1][0]
+      sat.pos.y = this.trajectoryArray[this.trajectoryArray.length - 1][1]
+      sat.pos.z = this.trajectoryArray[this.trajectoryArray.length - 1][2]
+      sat.vel.x = this.trajectoryArray[this.trajectoryArray.length - 1][3]
+      sat.vel.y = this.trajectoryArray[this.trajectoryArray.length - 1][4]
+      sat.vel.z = this.trajectoryArray[this.trajectoryArray.length - 1][5]
+      sat.calculateElements(earth)
+
+      this.endAnimation()
+    }
+  }
+
+  endAnimation() {
+    time.halt = 1
+    this.animating = false
+    this.i = 0
+    this.trajectoryArray = []
+    time.delta = deltaT
+    time.timeSinceCreation -= time.timeSinceCreation % time.delta
   }
 }

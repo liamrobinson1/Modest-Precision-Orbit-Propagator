@@ -39,9 +39,9 @@ var sunOrbitalRadius = 147.12 * 10 ** 6
 var sunMass = 1.98847 * 10 ** 30
 var sunRadius = 696340
 
-let missionSequence
-let missionArr = []
+let mission
 let executed = 0
+let animator
 
 var planet_data = [{
 name: 'EARTH',
@@ -103,22 +103,35 @@ function init() {
     createEnvironmentObjects()
     setUpScene()
     createPlanets()
+
+//TESTING TARGETING CAPABILITIES HERE
+    // var targeter = new Targeter(sat.state, earth, "periapsis", 10000, "V")
+    // targeter.vary()
 }
 
 function animate() {
-  time.update()
-  requestAnimationFrame(animate);
+  // console.log(animator.animating, mission.ready, mission.missionComplete)
+  requestAnimationFrame(animate)
+  if(animator.animating == false) {
+    time.update() //This needs to be here to give time a chance to unpause itself
     if(time.halt == 0) {
       removeEntities()
-      sat.standardTimestep()
-      environmentalUpdates()
 
-      // if(time.timeSinceCreation == 100 && executed == 0) {
-      //   sat.propToApoapsis(earth)
-      //   executed = 1
-      // }
+      if(mission.missionComplete == false && mission.ready == true) {
+        mission.executeMissionSegment()
+        mission.advanceMissionSegment()
+      }
+      else {
+        sat.standardTimestep()
+        environmentalUpdates()
+      }
     }
-    renderer.render(scene, cam);
+  }
+  else {
+    animator.showNextStep()
+  }
+
+  renderer.render(scene, cam);
 }
 
 function createPlanet(details) {
@@ -170,6 +183,8 @@ function createEnvironmentObjects() {
   earth = new Earth(earthMass, 0, 0, earthEqRadius, earthPolRadius, earthOmega, earthAxisTilt)
   moon = new Moon(moonMass, moonOrbitRadius, earth, 0, moonRadius)
   sat = new GravSat(satOrbitalRadius, satAngle, satMass)
+  animator = new Animator(10)
+  mission = new Mission(sat)
 }
 
 function setUpScene() {
