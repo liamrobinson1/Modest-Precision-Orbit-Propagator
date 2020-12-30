@@ -2,7 +2,7 @@ class Mission {
   constructor(targetObject) {
     this.target = targetObject
     this.missionSegment = 0
-    this.missionArraylength = 0
+    this.missionArraylength = 1
     this.missionComplete = false
     this.executionTime = 100
     this.ready = false
@@ -32,13 +32,15 @@ class Mission {
   runSegment() {
     switch(this.missionSegment) {
       case 0:
-        sat.propToNode(earth)
+        sat.propToApoapsis(earth, 10)
         break
       case 1:
         this.targetQuantity(earth, "ecc", 0.6, "V")
         break
       case 2:
-        sat.propToApoapsis(earth, 5)
+        console.log(sat.RAAN, sat.theta)
+        sat.propToTheta(earth, 10, sat.RAAN)
+        console.log(sat.RAAN, sat.theta)
         break
       case 3:
         this.targetQuantity(earth, "ecc", 0.02, "V")

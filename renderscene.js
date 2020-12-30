@@ -104,13 +104,14 @@ function init() {
     setUpScene()
     createPlanets()
 
-//TESTING TARGETING CAPABILITIES HERE
+// TESTING CAPABILITIES HERE
     // var targeter = new Targeter(sat.state, earth, "periapsis", 10000, "V")
     // targeter.vary()
+    // sat.propToApoapsis(earth, 10)
 }
 
 function animate() {
-  // console.log(animator.animating, mission.ready, mission.missionComplete)
+
   requestAnimationFrame(animate)
   if(animator.animating == false) {
     time.update() //This needs to be here to give time a chance to unpause itself
@@ -128,6 +129,7 @@ function animate() {
     }
   }
   else {
+    removeEntities()
     animator.showNextStep()
   }
 
@@ -183,7 +185,7 @@ function createEnvironmentObjects() {
   earth = new Earth(earthMass, 0, 0, earthEqRadius, earthPolRadius, earthOmega, earthAxisTilt)
   moon = new Moon(moonMass, moonOrbitRadius, earth, 0, moonRadius)
   sat = new GravSat(satOrbitalRadius, satAngle, satMass)
-  animator = new Animator(10)
+  animator = new Animator(100)
   mission = new Mission(sat)
 }
 

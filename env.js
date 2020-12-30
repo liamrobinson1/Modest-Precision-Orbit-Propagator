@@ -58,15 +58,18 @@ class Earth {
     this.toEq = new THREE.Matrix3()
     this.toEq.set(1, 0, 0, 0, Math.cos(-this.axisTilt), -Math.sin(-this.axisTilt), 0, Math.sin(-this.axisTilt), Math.cos(-this.axisTilt))
     this.rotation = 0
+    this.rotationIncrement = this.omega * time.delta
   }
 
   show() {
     if(animator.animating == false) {
-      this.rotation += this.omega * time.delta
+      this.rotationIncrement = this.omega * time.delta
     }
     else {
-      this.rotation += this.omega * animator.framesMod * time.delta
+      this.rotationIncrement = this.omega * animator.stepSize * time.delta
     }
+
+    this.rotation += this.rotationIncrement
     earthRender.rotation.y = this.rotation
     earthRender.rotation.x = this.axisTilt
   }

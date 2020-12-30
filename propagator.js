@@ -7,21 +7,11 @@ class Propagator {
     this.initialTime = initialTime
     this.integrator = new RungeKutta45(initialTime, initialState, step, framesElapsed, 10 ** -6)
     this.resolutionForDisplay = resolution
-  }
-
-  evaluateStoppingCondition() {
-    var elementValue = calculateElements(this.state, earth, this.stopCondition)
-    this.valueHistory.push(elementValue)
-    if(Math.abs(this.stopValue - elementValue) < this.tolerance) {
-      return true
-    }
-    else {
-      return false
-    }
+    this.diffHistory = []
   }
 
   propagate() {
-    if(time.timeSinceCreation % (100 * time.delta) == 0) {
+    if(time.currentFrame % 100 == 0) {
       tic("500 frame prop")
     }
 
@@ -39,10 +29,24 @@ class Propagator {
       var yinterp = interpolate(t, y, this.resolutionForDisplay)
       var zinterp = interpolate(t, z, this.resolutionForDisplay)
     }
-    if(time.timeSinceCreation % (100 * time.delta) == 0) {
+    if(time.currentFrame % 100 == 0) {
       toc("500 frame prop")
     }
     return [[t], [x], [y], [z], [vx], [vy], [vz]]
+  }
+
+  evaluateStoppingCondition() {
+    this.elementValue = calculateElements(this.state, earth, this.stopCondition)
+    this.valueHistory.push(this.elementValue)
+    this.diffHistory.push(this.elementValue - this.stopValue)
+    this.mostRecentAbsDiff = abs(this.valueHistory[this.valueHistory.length - 1] - this.valueHistory[this.valueHistory.length - 2])
+
+    if(Math.abs(this.stopValue - this.elementValue) < 2 * this.mostRecentAbsDiff) {
+      return true
+    }
+    else {
+      return false
+    }
   }
 
   propagateToValue(referenceBody, stopCondition, stopValue, tolerance, stepSize) {
@@ -54,9 +58,10 @@ class Propagator {
     this.initialStepSize = stepSize
     this.valueHistory = []
     this.stateHistory = []
+    this.timeDirection = 1
+    time.delta = this.stepSize //TESTING THIS HERE, NOT SURE IF CORRECT
 
     var i = 0
-
     console.log(this.stopCondition, this.stepSize, this.stopValue, this.tolerance)
 
     tic("propagationTimer")
@@ -68,18 +73,66 @@ class Propagator {
       this.extractAndSetState()
       this.stateHistory.push(this.state)
       this.elapsedTime += this.stepSize
-      this.adaptStepSize() //ENSURES THAT WE DON'T SKIP OUR VALUE
     }
-    console.log("We must propagate for ", this.elapsedTime, this.valueHistory)
+    this.searchAndDestroy()
+
+    console.log("We must propagate for ", this.elapsedTime.toFixed(3))
     toc("propagationTimer")
   }
 
-  adaptStepSize() {
-    if(Math.abs(this.valueHistory[this.valueHistory.length - 1] - this.valueHistory[0]) / Math.abs(this.stopValue - this.valueHistory[0]) > 0.94) {
-      if(Math.abs(this.valueHistory[this.valueHistory.length - 1] - this.valueHistory[this.valueHistory.length - 2]) > this.tolerance / 2) {
-        this.stepSize = this.stepSize * 0.8
+  searchAndDestroy() {
+    this.stepSize = this.stepSize / 2 //To make sure we can trigger the first halving
+    this.searchStateHistory = [[], []]
+    var i = 0
+
+    while(Math.abs(this.stopValue - this.elementValue) > 0.0000001 && i < 500) {
+      i += 1
+
+      this.integrator = new RungeKutta45(this.elapsedTime, this.state, this.stepSize, this.stepSize, 10 ** -6)
+      this.results = this.integrator.iterate()
+
+      this.extractAndSetState()
+      this.searchStateHistory.push(this.state)
+
+      this.elapsedTime += this.stepSize * this.timeDirection
+
+      this.elementValue = calculateElements(this.state, earth, this.stopCondition)
+
+      if(this.timeDirection == -1) { //Because reversing time has consequences
+        this.elementValue = 2 * PI - this.elementValue
+      }
+
+      this.valueHistory.push(this.elementValue)
+      this.diffHistory.push(this.elementValue - this.stopValue)
+
+
+      this.mostRecentDiff = this.diffHistory[this.diffHistory.length - 1]
+      this.previousDiff = this.diffHistory[this.diffHistory.length - 2]
+
+      if(Math.sign(this.mostRecentDiff) != Math.sign(this.previousDiff)) { //Then we know we've passsed it. time to reverse time and half our step size
+        this.stepSize = this.stepSize / 2
+        this.timeDirection = -this.timeDirection
+        this.state[3] = -this.state[3]
+        this.state[4] = -this.state[4]
+        this.state[5] = -this.state[5]
       }
     }
+
+    this.state[3] = this.state[3] * this.timeDirection
+    this.state[4] = this.state[4] * this.timeDirection
+    this.state[5] = this.state[5] * this.timeDirection
+
+    console.log(this.elementValue, this.stopValue)
+    if(!isNaN(this.elementValue)) { //Because a floating point error messes with propagating to theta = pi
+      this.stateHistory[this.stateHistory.length - 1] = this.state
+    }
+    else {
+      console.log("reverting to", this.searchStateHistory, this.stepSize, this.previousDiff, this.mostRecentDiff)
+      this.stateHistory[this.stateHistory.length - 1] = this.searchStateHistory[this.searchStateHistory.length - 3]
+      this.elapsedTime -= this.stepSize
+    }
+
+    console.log("At the end of animation, we should be at: ", this.stateHistory[this.stateHistory.length - 1], this.elapsedTime + time.timeSinceCreation)
   }
 
   extractAndSetState() {
@@ -99,14 +152,15 @@ class Propagator {
 
 
 class Animator {
-  constructor(framesMod) {
-    this.framesMod = framesMod
-    this.trajectoryArray = []
+  constructor(frames) {
+    this.framesToAnimate = frames
+    this.trajectoryArray = [] //Updated by the propagator
     this.i = 0
     this.animating = false
   }
 
   showNextStep() {
+    this.stepSize = Math.ceil(this.trajectoryArray.length / this.framesToAnimate)
     var nextPoint = this.trajectoryArray[this.i]
     sat.pos.x = nextPoint[0]
     sat.pos.y = nextPoint[1]
@@ -118,9 +172,8 @@ class Animator {
     sat.animateTimestep()
     environmentalUpdates()
 
-    this.i += this.framesMod
-    time.timeSinceCreation += animator.stepSize
-    time.delta = animator.stepSize
+    this.i += this.stepSize
+    time.timeSinceCreation += this.stepSize
 
     if(this.i >= this.trajectoryArray.length - 1) {
       sat.pos.x = this.trajectoryArray[this.trajectoryArray.length - 1][0]
@@ -141,6 +194,8 @@ class Animator {
     this.i = 0
     this.trajectoryArray = []
     time.delta = deltaT
-    time.timeSinceCreation -= time.timeSinceCreation % time.delta
+    time.timeSinceCreation = this.finalTime
+
+    console.log("At the end of animation, we're really at: ", sat.state, time.timeSinceCreation)
   }
 }

@@ -115,7 +115,6 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     else {
       this.RAAN = 2 * PI - Math.acos(this.n.x / this.n.length())
     }
-    // this.RAAN += 3 * PI//I know this is bad. having THREE.js's y-hat pointing up isn't doing any favors
 
     //CALCULATING AOP
     this.lineOfNodes = new THREE.Vector3(0, 1, 0)
@@ -200,7 +199,7 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
 
   saveGroundTrack(body) {
     if(time.halt == 0) {
-      if(time.timeSinceCreation % (5 * time.delta) == 0) {
+      if(time.currentFrame % 5 == 0 || animator.animating == true) {
         var pt = new THREE.Vector3()
         pt.copy(this.rBodyHat)
         pt.multiplyScalar(earth.eqRad + 20)
@@ -208,13 +207,14 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
         this.groundTrack[1].push(pt.y)
         this.groundTrack[2].push(pt.z)
       }
+
       for(var i = 0; i < this.groundTrack[0].length; i++) {
         var why = new THREE.Vector3(this.groundTrack[0][i], this.groundTrack[1][i], this.groundTrack[2][i])
 
         why.applyMatrix3(earth.toEq)
 
-        why.x = why.x * Math.cos(earth.omega * time.delta) + why.z * Math.sin(earth.omega * time.delta)
-        why.z = -why.x * Math.sin(earth.omega * time.delta) + why.z * Math.cos(earth.omega * time.delta)
+        why.x = why.x * Math.cos(earth.rotationIncrement) + why.z * Math.sin(earth.rotationIncrement)
+        why.z = -why.x * Math.sin(earth.rotationIncrement) + why.z * Math.cos(earth.rotationIncrement)
 
         why.applyMatrix3(earth.toEc)
 
@@ -264,7 +264,7 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     }
     // sat.displayFutureTrajectory(1000, earth, this.state)
 
-    if(time.timeSinceCreation % (4 * time.delta) == 0) {
+    if(time.currentFrame % 4 == 0) {
       sat.displayElements()
     }
   }
@@ -283,18 +283,18 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
   }
 
   showTrail() {
-    if(sat.stillInOnePiece == 1 && time.halt == 0 && time.timeSinceCreation % (5 * time.delta) == 0) {
+    if(sat.stillInOnePiece == 1 && time.halt == 0 && (time.currentFrame % 5 == 0 || animator.animating == true)) {
       pastPoints.push(new THREE.Vector3(sat.pos.x, sat.pos.y, sat.pos.z))
     }
     showVertexPath(pastPoints, new THREE.Color('rgb(255, 0, 0)'))
   }
 
-  prepareForAnimation(body, stepSize, propagator) {
+  prepareForAnimation(body, propagator) {
     this.displayFutureTrajectory(propagator.elapsedTime, body, this.state)
     animator.trajectoryArray = propagator.stateHistory
     animator.timeToAnimate = propagator.elapsedTime
     animator.animating = true
-    animator.stepSize = stepSize
+    animator.finalTime = propagator.elapsedTime + time.timeSinceCreation
     mission.ready == true
   }
 
@@ -303,30 +303,29 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 5)
     propagator.propagateToValue(body, "theta", PI, 0.01, stepSize)
 
-    this.prepareForAnimation(earth, stepSize, propagator)
+    this.prepareForAnimation(earth, propagator)
   }
 
   propToPeriapsis(body, stepSize) {
     var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 5)
     propagator.propagateToValue(body, "theta", 2 * PI, 0.01, stepSize)
 
-    this.prepareForAnimation(earth, stepSize, propagator)
+    this.prepareForAnimation(earth, propagator)
   }
 
-  propToNode(body) {
-    var stepSize = 1
-    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
-    propagator.propagateToValue(body, "y", 0, 1, stepSize)
+  // propToNode(body) {
+  //   var stepSize = 1
+  //   var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
+  //   propagator.propagateToValue(body, "y", 0, 1, stepSize)
+  //
+  //   this.prepareForAnimation(earth, propagator)
+  // }
 
-    this.prepareForAnimation(earth, stepSize, propagator)
-  }
-
-  propToTheta(body, thetaValue) {
-    var stepSize = 1
+  propToTheta(body, stepSize, thetaValue) {
     var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
     var timeToPropagate = propagator.propagateToValue(body, "theta", thetaValue, 0.01, stepSize)
 
-    this.prepareForAnimation(body, stepSize, propagator)
+    this.prepareForAnimation(body, propagator)
   }
 
   propToPosVelAngle(body, angle) {
@@ -334,6 +333,6 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
     var timeToPropagate = propagator.propagateToValue(body, "bodyAngle", angle, 0.01, stepSize)
 
-    this.prepareForAnimation(body, stepSize, propagator)
+    this.prepareForAnimation(body, propagator)
   }
 }

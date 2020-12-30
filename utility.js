@@ -137,6 +137,8 @@ function calculateElements(state, body, requestedElement) { //CALCULATES KEPLERI
       return h
     case "period":
       return period
+    case "rmag":
+      return rmag
     case "vmag":
       return vmag
     case "i":
