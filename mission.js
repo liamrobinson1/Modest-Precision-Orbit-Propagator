@@ -32,7 +32,7 @@ class Mission {
   runSegment() {
     switch(this.missionSegment) {
       case 0:
-        sat.propToApoapsis(earth, 10)
+        sat.propToDescendingNode(earth)
         break
       case 1:
         this.targetQuantity(earth, "ecc", 0.6, "V")

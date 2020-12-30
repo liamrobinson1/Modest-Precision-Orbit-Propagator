@@ -4,12 +4,11 @@
     <meta charset="utf-8">
     <div id="info">Description</div>
     <meta name="viewport" width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0>
-    <!-- <style> body {padding: 0; margin: 0;} </style> -->
+
     <script src="https://cdn.rawgit.com/mrdoob/three.js/master/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.101.1/examples/js/controls/OrbitControls.js"></script>
-    <script src="assets/p5.min.js"></script>
-    <script src="assets/p5.sound.min.js"></script>
-    <script src="assets/math.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.2.0/p5.min.js" integrity="sha512-b/htz6gIyFi3dwSoZ0Uv3cuv3Ony7EeKkacgrcVg8CMzu90n777qveu0PBcbZUA7TzyENGtU+qZRuFAkfqgyoQ==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/8.1.0/math.js" integrity="sha512-ne87j5uORxbrU7+bsqeJJWfWj5in65R9PCjaQL161xtH5cesZgULVbeVAkzAAN7hnYOcrHeBas9Wbd/Lm8gXFA==" crossorigin="anonymous"></script>
     <script src="sketch.js"></script>
     <script src="mission.js"></script>
     <script src="targeter.js"></script>
@@ -21,9 +20,11 @@
     <script src="rk45.js"></script>
     <script src="propagator.js"></script>
     <script src="renderscene.js"></script>
+
     <script>
     (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
     </script>
+    
   </head>
   <body>
   </body>

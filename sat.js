@@ -313,13 +313,28 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 8.292274371, -0.82093685
     this.prepareForAnimation(earth, propagator)
   }
 
-  // propToNode(body) {
-  //   var stepSize = 1
-  //   var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
-  //   propagator.propagateToValue(body, "y", 0, 1, stepSize)
-  //
-  //   this.prepareForAnimation(earth, propagator)
-  // }
+  propToAscendingNode(body) {
+    var stepSize = 1
+    if(this.AOP > PI) {
+      var thetaValue = 2 * PI - this.AOP
+    }
+    else {
+      var thetaValue = this.AOP
+    }
+
+    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
+    propagator.propagateToValue(body, "theta", thetaValue, 1, stepSize)
+
+    this.prepareForAnimation(earth, propagator)
+  }
+
+  propToDescendingNode(body) {
+    var stepSize = 1
+    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
+    propagator.propagateToValue(body, "theta", PI - this.AOP, 1, stepSize)
+
+    this.prepareForAnimation(earth, propagator)
+  }
 
   propToTheta(body, stepSize, thetaValue) {
     var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
