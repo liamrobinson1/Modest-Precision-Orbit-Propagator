@@ -11,11 +11,8 @@ class Propagator {
   }
 
   propagate() {
-    if(time.currentFrame % 100 == 0) {
-      tic("500 frame prop")
-    }
-
     this.results = this.integrator.iterate()
+
     var x = this.integrator.extract(0)
     var y = this.integrator.extract(1)
     var z = this.integrator.extract(2)
@@ -29,9 +26,7 @@ class Propagator {
       var yinterp = interpolate(t, y, this.resolutionForDisplay)
       var zinterp = interpolate(t, z, this.resolutionForDisplay)
     }
-    if(time.currentFrame % 100 == 0) {
-      toc("500 frame prop")
-    }
+
     return [[t], [x], [y], [z], [vx], [vy], [vz]]
   }
 
@@ -65,7 +60,7 @@ class Propagator {
     console.log(this.stopCondition, this.stepSize, this.stopValue, this.tolerance)
 
     tic("propagationTimer")
-    while((this.evaluateStoppingCondition() == false && i < 10000) || i < 100) {
+    while((this.evaluateStoppingCondition() == false && i < 10000) || i < 10) {
       i += 1
       this.integrator = new RungeKutta45(this.elapsedTime, this.state, this.stepSize, this.stepSize, 10 ** -6)
       this.results = this.integrator.iterate()
@@ -105,7 +100,6 @@ class Propagator {
       this.valueHistory.push(this.elementValue)
       this.diffHistory.push(this.elementValue - this.stopValue)
 
-
       this.mostRecentDiff = this.diffHistory[this.diffHistory.length - 1]
       this.previousDiff = this.diffHistory[this.diffHistory.length - 2]
 
@@ -122,12 +116,11 @@ class Propagator {
     this.state[4] = this.state[4] * this.timeDirection
     this.state[5] = this.state[5] * this.timeDirection
 
-    console.log(this.elementValue, this.stopValue)
     if(!isNaN(this.elementValue)) { //Because a floating point error messes with propagating to theta = pi
       this.stateHistory[this.stateHistory.length - 1] = this.state
     }
     else {
-      console.log("reverting to", this.searchStateHistory, this.stepSize, this.previousDiff, this.mostRecentDiff)
+      console.log("reverting to previous pt")
       this.stateHistory[this.stateHistory.length - 1] = this.searchStateHistory[this.searchStateHistory.length - 3]
       this.elapsedTime -= this.stepSize
     }

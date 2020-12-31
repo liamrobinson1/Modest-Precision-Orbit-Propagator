@@ -27,13 +27,11 @@ class Moon {
   show() {
     push()
     translate(this.pos.x , this.pos.y , this.pos.z )
-    // texture(moonTex)
     sphere(this.drawRadius, 100)
     pop()
     push()
     stroke(0, 255, 0)
     noFill()
-    // rotateX(PI / 2)
     ellipse(0, 0, 2 * this.r , 2 * this.r , 24)
     pop()
   }

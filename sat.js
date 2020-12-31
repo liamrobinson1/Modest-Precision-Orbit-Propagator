@@ -179,6 +179,9 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
     document.getElementById("E").innerHTML = this.e.toFixed(displayDigits)
     document.getElementById("H").innerHTML = this.h.toFixed(displayDigits)
 
+    document.getElementById("TIMESTEP").innerHTML = time.delta
+    document.getElementById("SELAPSED").innerHTML = time.timeSinceCreation.toFixed(2)
+
     // document.getElementById("overlay").innerText = txt
   }
 
@@ -205,14 +208,12 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
   }
 
   displayFutureTrajectory(framesToProp, rb, state) {
-    var propagator = new Propagator(framesToProp, 10, [state[0] - rb.pos.x, state[1] - rb.pos.y, state[2] - rb.pos.z, state[3] - rb.vel.x, state[4] - rb.vel.y, state[5] - rb.vel.z], time.timeSinceCreation, "No Interp")
+    var propagator = new Propagator(framesToProp, Math.ceil(framesToProp / 100), [state[0] - rb.pos.x, state[1] - rb.pos.y, state[2] - rb.pos.z, state[3] - rb.vel.x, state[4] - rb.vel.y, state[5] - rb.vel.z], time.timeSinceCreation, "No Interp")
     this.futureState = propagator.propagate()
 
     var drawPoints = []
     for(var i = 0; i < this.futureState[1][0].length; i++) {
-      if(i % 10 == 0) {
-        drawPoints.push(new THREE.Vector3(this.futureState[1][0][i], this.futureState[2][0][i], this.futureState[3][0][i]))
-      }
+      drawPoints.push(new THREE.Vector3(this.futureState[1][0][i], this.futureState[2][0][i], this.futureState[3][0][i]))
     }
     showVertexPath(drawPoints, new THREE.Color('rgb(0, 255, 0)'))
   }
@@ -269,6 +270,18 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
         dvVector.copy(this.orbitBinormal)
         this.vel.add(dvVector.multiplyScalar(dv))
         break
+      case "INCCHANGE":
+        var deltaI = this.equalityValue - this.initialValue
+        // console.log("You want to change inclination by", deltaI)
+
+        var orbitNormal = calculateElements(this.state, earth, "orbitNormal")
+        var orbitBinormal = calculateElements(this.state, earth, "orbitBinormal")
+        // console.log("Pre rotation: ", orbitNormal)
+        orbitNormal.applyAxisAngle(orbitBinormal, deltaI / 2 * PI / 180)
+        // console.log("post rotation: ", orbitNormal)
+
+        v.add(orbitNormal.multiplyScalar(dv))
+        break
     }
     this.calculateElements(earth)
   }
@@ -282,11 +295,9 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
       this.saveGroundTrack(earth)
       this.showGroundTrack()
     }
-    // sat.displayFutureTrajectory(1000, earth, this.state)
+    // sat.displayFutureTrajectory(this.period * 2 / 3, earth, this.state)
 
-    if(time.currentFrame % 4 == 0) {
-      sat.displayElements()
-    }
+    sat.displayElements()
   }
 
   animateTimestep() {

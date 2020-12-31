@@ -26,6 +26,7 @@ class RungeKutta45 {
   iterate() {
     var state = [this.initialState[0], this.initialState[1], this.initialState[2], this.initialState[3], this.initialState[4], this.initialState[5]]
     this.dataPointsComputed.push([this.currentTime, state])
+
     while(this.currentTime < this.stopTime) {
       this.evaluate(this.currentTime, this.currentState, this.h)
       state = [this.currentState[0], this.currentState[1], this.currentState[2], this.currentState[3], this.currentState[4], this.currentState[5]]
@@ -117,8 +118,8 @@ class RungeKutta45 {
 
     this.optStep = Math.min([hk, hl, hm, hn, ho, hp])
     this.currentState = [y[0], y[1], y[2], y[3], y[4], y[5]]
-    this.h = this.optStep
-    this.h = 1
+    // this.h = this.optStep
+    // this.h = 1 //why the fuck did i do this
   }
 
   dot(i, t, y0, y1, y2, y3, y4, y5) {

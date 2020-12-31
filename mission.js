@@ -2,7 +2,7 @@ class Mission {
   constructor(targetObject) {
     this.target = targetObject
     this.missionSegment = 0
-    this.missionArraylength = 1
+    this.missionArraylength = 2
     this.missionComplete = false
     this.executionTime = 100
     this.ready = false
@@ -32,15 +32,13 @@ class Mission {
   runSegment() {
     switch(this.missionSegment) {
       case 0:
-        sat.propToRMAG(earth, 1, 6798.55)
+        sat.propToAscendingNode(earth, 10)
         break
       case 1:
-        this.targetQuantity(earth, "i", 0, "N")
+        this.targetQuantity(earth, "i", 0, "INCCHANGE")
         break
       case 2:
-        console.log(sat.RAAN, sat.theta)
         sat.propToTheta(earth, 10, sat.RAAN)
-        console.log(sat.RAAN, sat.theta)
         break
       case 3:
         this.targetQuantity(earth, "ecc", 0.02, "V")
@@ -51,9 +49,12 @@ class Mission {
   targetQuantity(centralBody, paramToTarget, value, burnAxis) {
     console.log("Targeting " + paramToTarget + " = " + value.toString() + " with burn axis " + burnAxis)
     var targeter = new Targeter(sat.state, centralBody, paramToTarget, value, burnAxis)
-    var burnMag = targeter.vary()
-    if(!isNaN(burnMag)) {
-      sat.executeManeuver(burnAxis, burnMag)
+    var burnVector = targeter.vary()
+    console.log(burnVector)
+    if(burnVector) {
+      console.log(sat.vel)
+      sat.vel.add(burnVector)
+      console.log(sat.vel)
     }
     mission.ready = true
   }

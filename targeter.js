@@ -5,6 +5,7 @@ class Targeter {
     this.centralBody = centralBody
     this.targetingWhat = requestedVariable
     this.equalityValue = equalityValue
+    this.initialValue = calculateElements(this.state, centralBody, requestedVariable)
     this.burnAxis = burnAxis
     this.tolerance = 0.0001 //Hardcoded for now
     this.attemptLimit = 100
@@ -61,7 +62,7 @@ class Targeter {
     if(abs(this.currentFunctionValue) < this.tolerance) {
       console.log("Targeter converged on a burn magnitude of " + this.currentControlValue.toFixed(5))
       time.halt = 1
-      return this.currentControlValue
+      return this.deltaVector
     }
     return false
   }
@@ -80,7 +81,20 @@ class Targeter {
         var orbitBinormal = calculateElements(this.state, earth, "orbitBinormal")
         v.add(orbitBinormal.multiplyScalar(dv))
         break
+      case "INCCHANGE":
+        var deltaI = this.equalityValue - this.initialValue
+        // console.log("You want to change inclination by", deltaI)
+
+        var orbitNormal = calculateElements(this.state, earth, "orbitNormal")
+        var orbitBinormal = calculateElements(this.state, earth, "orbitBinormal")
+        // console.log("Pre rotation: ", orbitNormal)
+        orbitNormal.applyAxisAngle(orbitBinormal, deltaI / 2 * PI / 180)
+        // console.log("post rotation: ", orbitNormal)
+
+        v.add(orbitNormal.multiplyScalar(dv))
+        break
     }
+    this.deltaVector = new THREE.Vector3(v.x - this.state[3], v.y - this.state[4], v.z - this.state[5])
     this.state[3] = v.x
     this.state[4] = v.y
     this.state[5] = v.z
