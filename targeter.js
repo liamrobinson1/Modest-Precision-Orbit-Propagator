@@ -9,6 +9,7 @@ class Targeter {
     this.burnAxis = burnAxis
     this.tolerance = 0.0001 //Hardcoded for now
     this.attemptLimit = 100
+    this.sensetivity = 4
   }
 
   vary() {
@@ -40,7 +41,7 @@ class Targeter {
       fprime = (this.currentFunctionValue - this.previousFunctionValue) / (this.currentControlValue - this.previousControlValue)
 
       this.previousControlValue = this.currentControlValue
-      this.currentControlValue -= this.currentFunctionValue / fprime //Where the magic happens
+      this.currentControlValue -= this.currentFunctionValue / (fprime * this.sensetivity) //Where the magic happens
       this.burn(this.currentControlValue)
 
       this.previousFunctionValue = this.currentFunctionValue
@@ -83,13 +84,9 @@ class Targeter {
         break
       case "INCCHANGE":
         var deltaI = this.equalityValue - this.initialValue
-        // console.log("You want to change inclination by", deltaI)
-
         var orbitNormal = calculateElements(this.state, earth, "orbitNormal")
         var orbitBinormal = calculateElements(this.state, earth, "orbitBinormal")
-        // console.log("Pre rotation: ", orbitNormal)
         orbitNormal.applyAxisAngle(orbitBinormal, deltaI / 2 * PI / 180)
-        // console.log("post rotation: ", orbitNormal)
 
         v.add(orbitNormal.multiplyScalar(dv))
         break

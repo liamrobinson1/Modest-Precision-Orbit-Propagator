@@ -349,7 +349,9 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
     var thetaValue = 2 * PI - this.AOP
 
     var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
+    console.log(this.state)
     propagator.propagateToValue(body, "theta", thetaValue, 1, stepSize)
+    console.log(propagator.stateHistory[propagator.stateHistory.length - 1])
 
     this.prepareForAnimation(earth, propagator)
   }

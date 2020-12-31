@@ -76,6 +76,7 @@ class Propagator {
   }
 
   searchAndDestroy() {
+    console.log(this.state[3])
     this.stepSize = this.stepSize / 4 //To make sure we can trigger the first halving
     this.searchStateHistory = [[], []]
     var i = 0
@@ -116,16 +117,19 @@ class Propagator {
     this.state[4] = this.state[4] * this.timeDirection
     this.state[5] = this.state[5] * this.timeDirection
 
+    console.log("At the end of the propagation, time direction is: ", this.timeDirection, this.state[3])
+
     if(!isNaN(this.elementValue)) { //Because a floating point error messes with propagating to theta = pi
       this.stateHistory[this.stateHistory.length - 1] = this.state
     }
     else {
-      console.log("reverting to previous pt")
-      this.stateHistory[this.stateHistory.length - 1] = this.searchStateHistory[this.searchStateHistory.length - 3]
+      this.previousState = this.searchStateHistory[this.searchStateHistory.length - 3]
+      this.previousState[3] = this.previousState[3] * this.timeDirection
+      this.previousState[4] = this.previousState[4] * this.timeDirection
+      this.previousState[5] = this.previousState[5] * this.timeDirection
+      this.stateHistory[this.stateHistory.length - 1] = this.previousState
       this.elapsedTime -= this.stepSize
     }
-
-    console.log("At the end of animation, we should be at: ", this.stateHistory[this.stateHistory.length - 1], this.elapsedTime + time.timeSinceCreation)
   }
 
   extractAndSetState() {
@@ -188,7 +192,5 @@ class Animator {
     this.trajectoryArray = []
     time.delta = timeSlider.value()
     time.timeSinceCreation = this.finalTime
-
-    console.log("At the end of animation, we're really at: ", sat.state, time.timeSinceCreation)
   }
 }

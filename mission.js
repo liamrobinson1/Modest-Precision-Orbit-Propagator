@@ -2,7 +2,7 @@ class Mission {
   constructor(targetObject) {
     this.target = targetObject
     this.missionSegment = 0
-    this.missionArraylength = 2
+    this.missionArraylength = 4
     this.missionComplete = false
     this.executionTime = 100
     this.ready = false
@@ -38,9 +38,12 @@ class Mission {
         this.targetQuantity(earth, "i", 0, "INCCHANGE")
         break
       case 2:
-        sat.propToTheta(earth, 10, sat.RAAN)
+        sat.propToApoapsis(earth, 1)
         break
       case 3:
+        this.targetQuantity(earth, "apoapsis", 100000, "V")
+        break
+      case 4:
         this.targetQuantity(earth, "ecc", 0.02, "V")
         break
     }
@@ -50,11 +53,11 @@ class Mission {
     console.log("Targeting " + paramToTarget + " = " + value.toString() + " with burn axis " + burnAxis)
     var targeter = new Targeter(sat.state, centralBody, paramToTarget, value, burnAxis)
     var burnVector = targeter.vary()
-    console.log(burnVector)
     if(burnVector) {
-      console.log(sat.vel)
       sat.vel.add(burnVector)
-      console.log(sat.vel)
+      sat.state[3] = sat.vel.x
+      sat.state[4] = sat.vel.y
+      sat.state[5] = sat.vel.z
     }
     mission.ready = true
   }
