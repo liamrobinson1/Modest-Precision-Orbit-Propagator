@@ -1,4 +1,4 @@
-# Average-Precision Orbit Propagator
+# Medium-Precision Orbit Propagator
 A mission design tool based on P5.js and THREE.js. At its core, the application simulates (semi-faithfully) the Earth-Moon system with a user-controlled satellite. All features have been implemented by hand, including the integrator, interpolator, visualization, and mission control sequence architecture. The name is a play on STK's High-Precision Orbit Propagator. This tool is capable of targeting over a dozen quantities in the Earth or Moon ecliptic reference frames. The goal of this tool is to provide an interactive and intuitive introduction to orbital mechanics while still providing relatively advanced and precise targeting capabilities. Unique(ish) to this tool is its default to live-propagation and user control. When no mission control sequence is provided or the sequence has finished, control is returned to the user. This allows users to get comfortable with VNB burns or to execute their own missions with the help of the built-in time control system.
 
 ### Integrator
