@@ -3,42 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-
-    <style>
-      html, body {
-        height: 100%;
-        margin: 0;
-      }
-
-      p, tr, th {
-        font-family: helvetica;
-      }
-
-      .a {
-        target: "_blank";
-      }
-
-      #c {
-        width: 100%;
-        height: 100%;
-        display: block;
-        border: 1px;
-      }
-
-      .orbitalElementsContainer {
-        position: absolute;
-        z-index: 5;
-        background: rgb(150, 150, 150);
-        border-radius: 5px;
-        padding: 10px;
-      }
-
-      .elementTitle {
-        z-index: 1;
-        margin-top: 2px;
-      }
-
-    </style>
+    <link rel="stylesheet" href="main.css">
 
     <script>
     (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
@@ -136,13 +101,12 @@
       </table>
     </div>
 
-
-
     <script src="https://cdn.rawgit.com/mrdoob/three.js/master/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.101.1/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.2.0/p5.min.js" integrity="sha512-b/htz6gIyFi3dwSoZ0Uv3cuv3Ony7EeKkacgrcVg8CMzu90n777qveu0PBcbZUA7TzyENGtU+qZRuFAkfqgyoQ==" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/8.1.0/math.js" integrity="sha512-ne87j5uORxbrU7+bsqeJJWfWj5in65R9PCjaQL161xtH5cesZgULVbeVAkzAAN7hnYOcrHeBas9Wbd/Lm8gXFA==" crossorigin="anonymous"></script>
-    <!-- <script src="sketch.js"></script> -->
+
+    <script src="animator.js"></script>
     <script src="mission.js"></script>
     <script src="targeter.js"></script>
     <script src="env.js"></script>

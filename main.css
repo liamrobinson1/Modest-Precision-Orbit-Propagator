@@ -1,0 +1,32 @@
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+p, tr, th {
+  font-family: helvetica;
+}
+
+.a {
+  target: "_blank";
+}
+
+#c {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 1px;
+}
+
+.orbitalElementsContainer {
+  position: absolute;
+  z-index: 5;
+  background: rgb(150, 150, 150);
+  border-radius: 5px;
+  padding: 10px;
+}
+
+.elementTitle {
+  z-index: 1;
+  margin-top: 2px;
+}

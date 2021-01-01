@@ -1,6 +1,8 @@
 var p5 = new p5();
 
-var mesh, renderer, scene, cam, controls
+var mesh, renderer, scene, cam, controls, currentCam
+
+var propagator
 
 const G = 6.6743 * 10 ** -20
 const PI = 3.14159265358979
@@ -14,7 +16,6 @@ let sat
 const satTrail = []
 const pastPoints = []
 var satMass = 3
-var satOrbitalRadius = 100
 var satAngle = -2
 
 let earth
@@ -23,16 +24,17 @@ var earthOrbitRadius = 0
 var earthMass = 5.97219 * 10 ** 24
 var earthEqRadius = 6378.1370
 var earthPolRadius = 6356.7523142
-var earthOmega = 7.2921150 * 10 ** -5
-var earthAxisTilt = 0.4101524
+var earthOmega = 7.2921150 * 10 ** -5                                           //Earth's rotational angular speed in rad / sec
+var earthAxisTilt = 0.4101524                                                   //Earth's axis tilt in rad
 
 let moon
 let moonRender
 let tempMoon
 var moonAngle = 0
-var moonOrbitRadius = 357000
-var moonRadius = 1737.1
-var moonMass = 7.348 * 10 ** 22
+const moonOrbitRadius = 358000
+const moonRadius = 1737.1
+const moonMass = 7.348 * 10 ** 22
+const moonOrbitOmega = 2.66169 * 10 ** -6                                       //Moon's orbital angular speed in rad / sec
 
 let sun
 let sunRender
@@ -113,8 +115,8 @@ function init() {
 }
 
 function animate() {
-
   p5Controls()
+  cameraControl()
   resizeRendererToDisplaySize(renderer)
 
   if(animator.animating == false) {
@@ -136,6 +138,7 @@ function animate() {
   else {
     removeEntities()
     animator.showNextStep()
+    showVertexPath(sat.convergencePath, new THREE.Color('rgb(0, 255, 0)')) //TEMP REMOVE LATER
   }
 
   requestAnimationFrame(animate)
@@ -189,9 +192,9 @@ function createCities(radius, segments, emissive_texture) {
 function createEnvironmentObjects() {
   time = new Time(deltaT, 1)
   earth = new Earth(earthMass, 0, 0, earthEqRadius, earthPolRadius, earthOmega, earthAxisTilt)
-  moon = new Moon(moonMass, moonOrbitRadius, earth, 0, moonRadius)
-  sat = new GravSat(satOrbitalRadius, satAngle, satMass)
-  animator = new Animator(100)
+  moon = new Moon(moonMass, moonOrbitRadius, earth, 0, moonRadius, moonOrbitOmega)
+  sat = new Satellite(satMass)
+  animator = new Animator(500)
   mission = new Mission(sat)
 }
 
@@ -201,7 +204,7 @@ function setUpScene() {
   scene = new THREE.Scene()
   cam = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 300000000)
   const controls = new THREE.OrbitControls(cam, renderer.domElement);
-  controls.zoomSpeed = 0.1
+  controls.zoomSpeed = 0.8
   controls.panSpeed = 0.3
   scene.add(new THREE.AmbientLight(0x222222));
   var light = new THREE.DirectionalLight(0xffffff, 1);
@@ -254,37 +257,4 @@ function resizeRendererToDisplaySize(renderer) {
     cam.aspect = canvas.clientWidth / canvas.clientHeight;
     cam.updateProjectionMatrix();
   }
-}
-
-function p5Controls() {
-  if(time.timeSinceCreation > 0) {
-    if(sat.stillInOnePiece == 1) {
-      if(p5.keyIsDown(190) && time.halt == 0) {
-        sat.executeManeuver("V", 0.036)
-        time.keyPressedLastFrame = 1
-        time.burnMagnitude += 1
-      }
-
-      if(p5.keyIsDown(188) && time.halt == 0) {
-        sat.executeManeuver("V", -0.036)
-        time.keyPressedLastFrame = 1
-        time.burnMagnitude -= 1
-      }
-
-      if(p5.keyIsDown(ESCAPE)) {
-        time.halt = 1
-      }
-
-      if(!p5.keyIsDown(190) && !p5.keyIsDown(190) && time.keyPressedLastFrame == 1) {
-        time.keyPressedLastFrame = 0
-        time.burnMagnitude = 0
-      }
-    }
-  }
-}
-
-function createUserControls() {
-  timeSlider = createSlider(1, 20, 10);
-  timeSlider.position(100, 10);
-  timeSlider.style('width', '80px');
 }

@@ -186,3 +186,69 @@ function removeEntities(object) {
     }
   }
 }
+
+function cameraControl() {
+  if(p5.keyIsDown(77)) {
+    currentCam = "moon"
+  }
+  else if(p5.keyIsDown(69)) {
+    currentCam = "earth"
+  }
+  else if(p5.keyIsDown(83)) {
+    currentCam = "sat"
+  }
+  else if(!currentCam){
+    currentCam = "earth"
+  }
+
+  switch(currentCam) {
+    case "earth":
+      cam.lookAt(earth.pos.x, earth.pos.y, earth.pos.z)
+      break
+    case "moon":
+      var camPos = new THREE.Vector3()
+      camPos.copy(moon.pos).add(new THREE.Vector3(0, 9000, 0))
+      cam.lookAt(moon.pos.x, moon.pos.y, moon.pos.z)
+      cam.position.set(camPos.x, camPos.y, camPos.z)
+      break
+    case "sat":
+      var camPos = new THREE.Vector3()
+      camPos.copy(sat.orbitBinormal).setLength(4000).add(sat.pos)
+      cam.lookAt(sat.pos.x, sat.pos.y, sat.pos.z)
+      cam.position.set(camPos.x, camPos.y, camPos.z)
+      break
+  }
+}
+
+function p5Controls() {
+  if(time.timeSinceCreation > 0) {
+    if(sat.stillInOnePiece == 1) {
+      if(p5.keyIsDown(190) && time.halt == 0) {
+        sat.executeManeuver("V", 0.036)
+        time.keyPressedLastFrame = 1
+        time.burnMagnitude += 1
+      }
+
+      if(p5.keyIsDown(188) && time.halt == 0) {
+        sat.executeManeuver("V", -0.036)
+        time.keyPressedLastFrame = 1
+        time.burnMagnitude -= 1
+      }
+
+      if(p5.keyIsDown(ESCAPE)) {
+        time.halt = 1
+      }
+
+      if(!p5.keyIsDown(190) && !p5.keyIsDown(190) && time.keyPressedLastFrame == 1) {
+        time.keyPressedLastFrame = 0
+        time.burnMagnitude = 0
+      }
+    }
+  }
+}
+
+function createUserControls() {
+  timeSlider = createSlider(1, 20, 10);
+  timeSlider.position(100, 10);
+  timeSlider.style('width', '80px');
+}

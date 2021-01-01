@@ -1,5 +1,5 @@
 class Targeter {
-  constructor(state, centralBody, requestedVariable, equalityValue, burnAxis) {
+  constructor(state, centralBody, requestedVariable, equalityValue, burnAxis, sensetivity) {
     this.state = [state[0], state[1], state[2], state[3], state[4], state[5]]
     this.iState = [state[0], state[1], state[2], state[3], state[4], state[5]]
     this.centralBody = centralBody
@@ -7,9 +7,9 @@ class Targeter {
     this.equalityValue = equalityValue
     this.initialValue = calculateElements(this.state, centralBody, requestedVariable)
     this.burnAxis = burnAxis
-    this.tolerance = 0.0001 //Hardcoded for now
-    this.attemptLimit = 100
-    this.sensetivity = 4
+    this.tolerance = 0.0001                                                     //Hardcoded for now
+    this.attemptLimit = 600
+    this.sensetivity = sensetivity
   }
 
   vary() {
@@ -46,8 +46,6 @@ class Targeter {
 
       this.previousFunctionValue = this.currentFunctionValue
       this.currentFunctionValue = calculateElements(this.state, this.centralBody, this.targetingWhat) - this.equalityValue
-
-      console.log(this.currentFunctionValue.toFixed(3), this.currentControlValue.toFixed(3))
 
       if(abs(this.currentControlValue - this.previousControlValue) > 100000) {
         alert("No Correlation between equality and control variables")

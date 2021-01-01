@@ -8,6 +8,8 @@ class Propagator {
     this.integrator = new RungeKutta45(initialTime, initialState, step, framesElapsed, 10 ** -6)
     this.resolutionForDisplay = resolution
     this.diffHistory = []
+    this.stepSize = step
+    this.initialStepSize = step
   }
 
   propagate() {
@@ -31,10 +33,15 @@ class Propagator {
   }
 
   evaluateStoppingCondition() {
-    this.elementValue = calculateElements(this.state, earth, this.stopCondition)
+    this.elementValue = calculateElements(this.state, this.centralBody, this.stopCondition)
     this.valueHistory.push(this.elementValue)
     this.diffHistory.push(this.elementValue - this.stopValue)
     this.mostRecentAbsDiff = abs(this.valueHistory[this.valueHistory.length - 1] - this.valueHistory[this.valueHistory.length - 2])
+
+    // console.log(this.stopCondition, this.stopValue, this.elementValue, this.mostRecentAbsDiff)
+    // if(Math.random() > 0.99) {
+    //   console.log(calculateElements(this.state, moon, "theta"))
+    // }
 
     if(Math.abs(this.stopValue - this.elementValue) < 2 * this.mostRecentAbsDiff) {
       return true
@@ -43,6 +50,25 @@ class Propagator {
       return false
     }
   }
+
+  // propagateToLocalExtrema(referenceBody, parameter, stepSize) {
+  //   this.valueHistory = []
+  //   this.stateHistory = []
+  //   this.timeDirection = 1
+  //   time.delta = this.stepSize //Still not sure
+  //   this.stopCondition = parameter
+  //   this.centralBody = referenceBody
+  //
+  //   var i = 0
+  //
+  //   this.integrator = new RungeKutta45(this.elapsedTime, this.state, this.stepSize, this.stepSize, 10 ** -6)
+  //   this.results = this.integrator.iterate()
+  //
+  //   this.extractAndSetState()
+  //   this.stateHistory.push(this.state)
+  //   this.elapsedTime += this.stepSize
+  //   this.valueHistory.push(calculateElements(this.state, earth, this.stopCondition))
+  // }
 
   propagateToValue(referenceBody, stopCondition, stopValue, tolerance, stepSize) {
     this.stopCondition = stopCondition
@@ -55,6 +81,7 @@ class Propagator {
     this.stateHistory = []
     this.timeDirection = 1
     time.delta = this.stepSize //TESTING THIS HERE, NOT SURE IF CORRECT
+    this.centralBody = referenceBody
 
     var i = 0
     console.log(this.stopCondition, this.stepSize, this.stopValue, this.tolerance)
@@ -69,20 +96,26 @@ class Propagator {
       this.stateHistory.push(this.state)
       this.elapsedTime += this.stepSize
     }
+
+    console.log(this.centralBody)
+
+    // if(this.centralBody.r != 358000) {
     this.searchAndDestroy()
+    // }
 
     console.log("We must propagate for ", this.elapsedTime.toFixed(3))
     toc("propagationTimer")
   }
 
   searchAndDestroy() {
-    console.log(this.state[3])
-    this.stepSize = this.stepSize / 4 //To make sure we can trigger the first halving
+    console.log("I got handed to S+D", this.elementValue)
+    this.stepSize = this.stepSize / 4                                           //To make sure we can trigger the first halving
     this.searchStateHistory = [[], []]
     this.timeDirectionHistory = []
     var i = 0
 
     while(Math.abs(this.stopValue - this.elementValue) > 0.0000001 && i < 500) {
+      console.log(this.elementValue)
       i += 1
 
       this.integrator = new RungeKutta45(this.elapsedTime, this.state, this.stepSize, this.stepSize, 10 ** -6)
@@ -94,7 +127,7 @@ class Propagator {
 
       this.elapsedTime += this.stepSize * this.timeDirection
 
-      this.elementValue = calculateElements(this.state, earth, this.stopCondition)
+      this.elementValue = calculateElements(this.state, this.centralBody, this.stopCondition)
 
       if(this.timeDirection == -1) { //Because reversing time has consequences
         this.elementValue = 2 * PI - this.elementValue
@@ -114,7 +147,6 @@ class Propagator {
         this.state[5] = -this.state[5]
       }
     }
-
 
     if(!isNaN(this.elementValue)) { //Because a floating point error messes with propagating to theta = pi
       this.state[3] = this.state[3] * this.timeDirection
@@ -149,53 +181,5 @@ class Propagator {
     var pointsComputed = t.length
 
     this.state = [x[1], y[1], z[1], vx[1], vy[1], vz[1]]
-  }
-}
-
-
-class Animator {
-  constructor(frames) {
-    this.framesToAnimate = frames
-    this.trajectoryArray = [] //Updated by the propagator
-    this.i = 0
-    this.animating = false
-  }
-
-  showNextStep() {
-    this.stepSize = Math.ceil(this.trajectoryArray.length / this.framesToAnimate)
-    var nextPoint = this.trajectoryArray[this.i]
-    sat.pos.x = nextPoint[0]
-    sat.pos.y = nextPoint[1]
-    sat.pos.z = nextPoint[2]
-    sat.vel.x = nextPoint[3]
-    sat.vel.y = nextPoint[4]
-    sat.vel.z = nextPoint[5]
-
-    sat.animateTimestep()
-    environmentalUpdates()
-
-    this.i += this.stepSize
-    time.timeSinceCreation += this.stepSize
-
-    if(this.i >= this.trajectoryArray.length - 1) {
-      sat.pos.x = this.trajectoryArray[this.trajectoryArray.length - 1][0]
-      sat.pos.y = this.trajectoryArray[this.trajectoryArray.length - 1][1]
-      sat.pos.z = this.trajectoryArray[this.trajectoryArray.length - 1][2]
-      sat.vel.x = this.trajectoryArray[this.trajectoryArray.length - 1][3]
-      sat.vel.y = this.trajectoryArray[this.trajectoryArray.length - 1][4]
-      sat.vel.z = this.trajectoryArray[this.trajectoryArray.length - 1][5]
-      sat.calculateElements(earth)
-
-      this.endAnimation()
-    }
-  }
-
-  endAnimation() {
-    time.halt = 1
-    this.animating = false
-    this.i = 0
-    this.trajectoryArray = []
-    time.delta = timeSlider.value()
-    time.timeSinceCreation = this.finalTime
   }
 }

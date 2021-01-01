@@ -143,11 +143,11 @@ class RungeKutta45 {
       // case 5:
       //   return -earth.mu / r ** 3 * y2 * (1 - J2 * 3 / 2 * (earth.eqRad / r) ** 2 * (5 * y2 ** 2 / r ** 2 - 1)) - moon.mu / moonPS.length() ** 3 * moonPS.z
       case 3:
-        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y0
+        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y0 - moon.mu / moonPS.length() ** 3 * moonPS.x
       case 4:
-        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y1
+        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y1 - moon.mu / moonPS.length() ** 3 * moonPS.y
       case 5:
-        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y2
+        return -earth.mu / (y0 ** 2 + y1 ** 2 + y2 ** 2) ** 1.5 * y2 - moon.mu / moonPS.length() ** 3 * moonPS.z
     }
   }
 

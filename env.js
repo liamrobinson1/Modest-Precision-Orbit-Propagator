@@ -1,10 +1,10 @@
 class Moon {
-  constructor(bodyMass, orbitRad, centralBody, thetaNaught, drawRadius) {
+  constructor(bodyMass, orbitRad, centralBody, thetaNaught, drawRadius, omega) {
     this.mass = bodyMass
     this.mu = bodyMass * G
     this.r = orbitRad
     this.theta = thetaNaught
-    this.thetaDot = -((G * earthMass / this.r) ** 0.5) / this.r * time.delta
+    this.thetaDot = omega
     this.pos = new THREE.Vector3(0, 0, 0)
     this.period = -2 * PI / this.thetaDot
     this.drawRadius = drawRadius
@@ -12,16 +12,13 @@ class Moon {
 
   update() {
     if(time.halt == 0) {
-      this.theta += this.thetaDot
-      this.pos = new THREE.Vector3(this.r * Math.sin(this.theta) + earth.pos.y, 0, this.r * Math.cos(this.theta) + earth.pos.x)
-      this.vel = new THREE.Vector3(this.thetaDot * this.r * Math.cos(this.theta), 0, -this.thetaDot * this.r * Math.sin(this.theta))
+      this.pos = new THREE.Vector3(this.r * Math.sin(this.thetaDot * time.timeSinceCreation) + earth.pos.y, 0, this.r * Math.cos(this.thetaDot * time.timeSinceCreation) + earth.pos.x)
+      this.vel = new THREE.Vector3(this.thetaDot * this.r * Math.cos(this.thetaDot * time.timeSinceCreation), 0, -this.thetaDot * this.r * Math.sin(this.thetaDot * time.timeSinceCreation))
     }
   }
 
-  propagate(propDirection, targetObject) {
-    this.theta += this.thetaDot * propDirection //here's where we'd change the prop direction
-    this.pos = new THREE.Vector3(this.r * Math.cos(this.theta) + earth.pos.x, this.r * Math.sin(this.theta) + earth.pos.y)
-    this.vel = new THREE.Vector3(-this.thetaDot * this.r * Math.sin(this.theta), this.thetaDot * this.r * Math.cos(this.theta))
+  queryPosition(time) {
+    return new THREE.Vector3(this.r * Math.sin(this.thetaDot * time) + earth.pos.x, earth.pos.y, this.r * Math.cos(this.thetaDot * time) + earth.pos.z)
   }
 
   show() {
@@ -34,10 +31,6 @@ class Moon {
     noFill()
     ellipse(0, 0, 2 * this.r , 2 * this.r , 24)
     pop()
-  }
-
-  queryPosition(time) {
-    return new THREE.Vector3(this.r * Math.sin(this.thetaDot * time) + earth.pos.x, earth.pos.y, this.r * Math.cos(this.thetaDot * time) + earth.pos.z)
   }
 }
 
@@ -64,7 +57,7 @@ class Earth {
       this.rotationIncrement = this.omega * time.delta
     }
     else {
-      this.rotationIncrement = this.omega * animator.stepSize * time.delta
+      this.rotationIncrement = this.omega * animator.timeStep
     }
 
     this.rotation += this.rotationIncrement

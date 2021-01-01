@@ -1,40 +1,21 @@
 
-class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.820936859, -4.298237588]
-  constructor(r, t, satMass) {
-    // this.pos = new THREE.Vector3(earth.pos.x + r * cos(t), earth.pos.y + -r * sin(t))
-    // this.vel = new THREE.Vector3(-sin(t), -cos(t) + 0.00001, .4).mult((G * earth.mass / r) ** 0.5)
+class Satellite { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.820936859, -4.298237588]
+  constructor(satMass) {
     this.pos = new THREE.Vector3(1867.27869, -5349.42646, 3744.90429)
     this.vel = new THREE.Vector3(6.292274371, -0.820936859, -4.298237588)
-    // this.pos = new THREE.Vector3(35786, 0, 0)
-    // this.vel = new THREE.Vector3(0, -0.01, -3.33742925385)
 
-    this.acc = new THREE.Vector3(0, 0, 0)
-    this.gravityVector = new THREE.Vector3(0, 0, 0)
-    this.gravitySourceMass = 0
-    this.distToEarth = 0
-    this.distToMoon = 0
-    this.r1 = 0
-    this.r2 = 0
     this.apoapsis = 0
     this.periapsis = 0
-    this.transferComplete = 0
     this.period = 0
     this.a = 0
     this.mass = satMass
-    this.initialPosition = new THREE.Vector3(earth.pos.x + r * Math.cos(t), earth.pos.y -r * Math.sin(t), 0)
-    this.apoapsisVector = new THREE.Vector3(this.pos.x, this.pos.y, 0)
-    this.periapsisVector = new THREE.Vector3(this.pos.x, this.pos.y, 0)
     this.dvUsed = 0
     this.stillInOnePiece = 1
     this.deltaT = deltaT
-    this.missionSegment = 0
     this.haltPropagation = 0
     this.mostRecentPath = []
     this.theta = 0
     this.specificE = 0
-    this.eccMoon = 0
-    this.eccMoonVector = new THREE.Vector3(0, 0, 0)
-    this.moonPos = new THREE.Vector3(0, 0, 0)
     this.earthPosVelAngle = 0
     this.state = [this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z]
     this.groundTrack = [[], [], []]
@@ -42,13 +23,12 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
 
   orbitUpdate(halt, step) {
     if(halt == 0) {
-      var propagator = new Propagator(2 * step, step, this.state, time.timeSinceCreation, "No Interp")
+      propagator = new Propagator(2 * step, step, this.state, time.timeSinceCreation, "No Interp")
       var res = propagator.propagate()
-      this.state = [res[1], res[2], res[3], res[4], res[5], res[6]]
 
+      this.state = [res[1], res[2], res[3], res[4], res[5], res[6]]
       this.pos = new THREE.Vector3(this.state[0][0][1], this.state[1][0][1], this.state[2][0][1])
       this.vel = new THREE.Vector3(this.state[3][0][1], this.state[4][0][1], this.state[5][0][1])
-
       this.state = [this.pos.x, this.pos.y, this.pos.z, this.vel.x, this.vel.y, this.vel.z]
 
       if(this.distToEarth < earth.eqRad) {
@@ -167,7 +147,7 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
 
   calculateHyperbolicParameters() {
     this.betaAngle = Math.acos(1 / this.ecc)
-    //
+
     // var s1 = p5.Vector.mult(this.eccVector, cos(this.betaAngle))
     // var s2 = p5.Vector.mult(p5.Vector.cross(this.orbitNormal, this.eccVector), sin(this.betaAngle))
 
@@ -187,14 +167,16 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
     this.BdotT = p5.Vector.dot(this.B, this.T)
   }
 
-  displayFutureTrajectory(framesToProp, rb, state) {
-    var propagator = new Propagator(framesToProp, Math.ceil(framesToProp / 100), [state[0] - rb.pos.x, state[1] - rb.pos.y, state[2] - rb.pos.z, state[3] - rb.vel.x, state[4] - rb.vel.y, state[5] - rb.vel.z], time.timeSinceCreation, "No Interp")
-    this.futureState = propagator.propagate()
+  displayFutureTrajectory(framesToProp, state) {
+    console.log("We are displaying with state: ", state)
+    var futurePropagator = new Propagator(framesToProp, Math.ceil(framesToProp / 4000), state, time.timeSinceCreation, "No Interp")
+    this.futureState = futurePropagator.propagate()
 
     var drawPoints = []
     for(var i = 0; i < this.futureState[1][0].length; i++) {
       drawPoints.push(new THREE.Vector3(this.futureState[1][0][i], this.futureState[2][0][i], this.futureState[3][0][i]))
     }
+    this.convergencePath = drawPoints                                           //For plotting every frame of the animation
     showVertexPath(drawPoints, new THREE.Color('rgb(0, 255, 0)'))
   }
 
@@ -252,14 +234,10 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
         break
       case "INCCHANGE":
         var deltaI = this.equalityValue - this.initialValue
-        // console.log("You want to change inclination by", deltaI)
-
         var orbitNormal = calculateElements(this.state, earth, "orbitNormal")
         var orbitBinormal = calculateElements(this.state, earth, "orbitBinormal")
-        // console.log("Pre rotation: ", orbitNormal)
-        orbitNormal.applyAxisAngle(orbitBinormal, deltaI / 2 * PI / 180)
-        // console.log("post rotation: ", orbitNormal)
 
+        orbitNormal.applyAxisAngle(orbitBinormal, deltaI / 2 * PI / 180)
         v.add(orbitNormal.multiplyScalar(dv))
         break
     }
@@ -287,7 +265,7 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
       this.saveGroundTrack(earth)
       this.showGroundTrack()
     }
-    
+
     this.displayElements()
   }
 
@@ -299,43 +277,42 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
   }
 
   prepareForAnimation(body, propagator) {
-    this.displayFutureTrajectory(propagator.elapsedTime, body, this.state)
+    console.log("PREPARING FOR ANIMATION")
     animator.trajectoryArray = propagator.stateHistory
     animator.timeToAnimate = propagator.elapsedTime
     animator.animating = true
     animator.finalTime = propagator.elapsedTime + time.timeSinceCreation
+    animator.propStepUsed = propagator.initialTimeStep
     mission.ready == true
+
+    this.displayFutureTrajectory(propagator.elapsedTime, this.state)
   }
 
   //ORBITAL MANEUVERS
   propToApoapsis(body, stepSize) {
-    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 5)
+    propagator = new Propagator(2, stepSize, this.state, time.timeSinceCreation, "No Interp", 5)
     propagator.propagateToValue(body, "theta", PI, 0.01, stepSize)
 
     this.prepareForAnimation(earth, propagator)
   }
 
   propToPeriapsis(body, stepSize) {
-    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 5)
-    propagator.propagateToValue(body, "theta", 2 * PI, 0.01, stepSize)
+    propagator = new Propagator(2, stepSize, this.state, time.timeSinceCreation, "No Interp", 5)
+    propagator.propagateToValue(body, "theta", 2 * PI, 0.01, stepSize)          //Note that 2pi is used, 0 breaks more often
 
     this.prepareForAnimation(earth, propagator)
   }
 
-  propToAscendingNode(body) {
-    var stepSize = 1
+  propToAscendingNode(body, stepSize) {
     var thetaValue = 2 * PI - this.AOP
 
-    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
-    console.log(this.state)
+    propagator = new Propagator(2, stepSize, this.state, time.timeSinceCreation, "No Interp", 1)
     propagator.propagateToValue(body, "theta", thetaValue, 1, stepSize)
-    console.log(propagator.stateHistory[propagator.stateHistory.length - 1])
 
     this.prepareForAnimation(earth, propagator)
   }
 
-  propToDescendingNode(body) {
-    var stepSize = 1
+  propToDescendingNode(body, stepSize) {
     if(this.AOP > PI) {
       var thetaValue = 3 * PI - this.AOP
     }
@@ -343,14 +320,14 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
       var thetaValue = PI - this.AOP
     }
 
-    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
-    propagator.propagateToValue(body, "theta", thetaValue, 1, stepSize)
+    propagator = new Propagator(2, stepSize, this.state, time.timeSinceCreation, "No Interp", 1)
+    propagator.propagateToValue(body, "theta", thetaValue, 0.01, stepSize)
 
     this.prepareForAnimation(earth, propagator)
   }
 
   propToTheta(body, stepSize, thetaValue) {
-    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
+    propagator = new Propagator(2, stepSize, this.state, time.timeSinceCreation, "No Interp", 1)
     var timeToPropagate = propagator.propagateToValue(body, "theta", thetaValue, 0.01, stepSize)
 
     this.prepareForAnimation(body, propagator)
@@ -362,7 +339,7 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
 
     if(!isNaN(thetaValue)) {
       console.log("an RMAG of " + rmagValue.toString() + " corresponds with a theta of: " + thetaValue.toString())
-      var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
+      propagator = new Propagator(2, stepSize, this.state, time.timeSinceCreation, "No Interp", 1)
       var timeToPropagate = propagator.propagateToValue(body, "theta", thetaValue, 0.01, stepSize)
 
       this.prepareForAnimation(body, propagator)
@@ -374,7 +351,7 @@ class GravSat { //[1867.27869, -5349.42646, 3744.90429, 6.292274371, -0.82093685
 
   propToPosVelAngle(body, angle) {
     var stepSize = 1
-    var propagator = new Propagator(2, 1, this.state, time.timeSinceCreation, "No Interp", 1)
+    propagator = new Propagator(2, stepSize, this.state, time.timeSinceCreation, "No Interp", 1)
     var timeToPropagate = propagator.propagateToValue(body, "bodyAngle", angle, 0.01, stepSize)
 
     this.prepareForAnimation(body, propagator)

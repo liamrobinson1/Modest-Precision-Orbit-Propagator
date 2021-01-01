@@ -1,2 +1,4 @@
-
 assets/.DS_Store
+.gitignore
+.gitattributes
+.DS_sture
